@@ -10,9 +10,23 @@ return new class extends Migration
     {
         Schema::create('kelas', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_kelas');
-            // Pastikan relasi ke gurus juga aman (tabel gurus harus sudah ada)
-            $table->foreignId('wali_kelas_id')->nullable()->constrained('gurus')->onDelete('set null');
+
+            // Relasi Tahun Ajaran
+            $table->foreignId('tahun_ajaran_id')
+                  ->constrained('tahun_ajarans')
+                  ->onDelete('cascade');
+            
+            // Relasi Wali Kelas
+            // Harus UnsignedBigInteger agar jodoh dengan $table->id() di tabel gurus
+            $table->unsignedBigInteger('wali_kelas_id')->nullable(); 
+            
+            $table->foreign('wali_kelas_id')
+                  ->references('id')
+                  ->on('gurus') // Pastikan nama tabel di database benar 'gurus'
+                  ->onDelete('set null');
+
+            $table->string('nama_kelas'); 
+            $table->integer('tingkat');   
             $table->timestamps();
         });
     }

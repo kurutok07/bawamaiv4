@@ -127,7 +127,7 @@
 </head>
 <body class="dashboard-page">
 
-    {{-- Navbar bisa dicopy dari welcome.blade.php atau dibuat component --}}
+    {{-- Navbar --}}
     
     <section class="hero-section" style="height: 170px; align-items: flex-start; padding-top: 40px;">
         <div class="container">
@@ -137,8 +137,10 @@
 
     <main class="container">
         <div class="content-container">
+            
+            {{-- [FIX 1] Tombol Kembali: Cek Parent ID agar tidak error slug on null --}}
             <button 
-                onclick="window.location.href='{{ route('lms.show', $item->parent->slug) }}'" 
+                onclick="window.location.href='{{ $item->parent_id ? route('lms.show', $item->parent->slug) : route('dashboard') }}'" 
                 class="btn back-btn"
                 style="
                     position: relative; 
@@ -158,12 +160,10 @@
             
             @if($item->type == 'video')
                 <div class="video-wrapper">
-                    {{-- Pastikan link database berupa embed URL (bukan watch URL) --}}
                     <iframe src="{{ $item->content }}" title="YouTube video player" allowfullscreen></iframe>
                 </div>
             
             @elseif($item->type == 'file')
-                {{-- Tampilkan PDF --}}
                 <embed src="{{ asset($item->content) }}" type="application/pdf" class="pdf-wrapper" />
                 
                 <div style="margin-top: 20px; text-align: right;">
@@ -182,8 +182,10 @@
                     </a>
                  </div>
             @endif
-        <hr style="margin-top: 30px; margin-bottom: 20px; border-top: 1px solid #eee;">
+            
+            <hr style="margin-top: 30px; margin-bottom: 20px; border-top: 1px solid #eee;">
 
+            {{-- BAGIAN NAVIGASI NEXT/PREV --}}
             <div class="navigation-wrapper" style="display: flex; justify-content: space-between; align-items: center;">
                 
                 {{-- TOMBOL SEBELUMNYA (PREVIOUS) --}}
@@ -210,8 +212,8 @@
                         <i class="fas fa-chevron-right"></i>
                     </a>
                 @else
-                    {{-- Jika sudah materi terakhir, tampilkan tombol kembali ke menu --}}
-                    <a href="{{ route('lms.show', $item->parent->slug) }}" class="nav-btn finish-btn">
+                    {{-- [FIX 2] Tombol Selesai: Cek Parent ID agar tidak error --}}
+                    <a href="{{ $item->parent_id ? route('lms.show', $item->parent->slug) : route('dashboard') }}" class="nav-btn finish-btn">
                         <div class="nav-text">
                             <span class="nav-label">Selesai</span>
                             <span class="nav-title">Kembali ke Menu</span>
@@ -220,14 +222,10 @@
                     </a>
                 @endif
             </div>
-            {{-- SELESAI BAGIAN TOMBOL NAVIGASI --}}
-
-        </div> {{-- Tutup .content-container --}}
+            
         </div>
-        
     </main>
     <br><br>
 
-    {{-- Footer --}}
 </body>
 </html>

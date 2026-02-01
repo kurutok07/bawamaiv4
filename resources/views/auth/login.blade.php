@@ -12,7 +12,7 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); /* Gradient Biru Laravel/Bootstrap */
+            background: linear-gradient(135deg, #1b5e20 0%, #1b5e20 100%); /* Gradient Biru Laravel/Bootstrap */
             height: 100vh;
             display: flex;
             align-items: center;
@@ -59,7 +59,6 @@
             padding: 12px;
             font-weight: 600;
             font-size: 16px;
-            background-color: #0d6efd;
             border: none;
             transition: all 0.3s ease;
         }
@@ -149,7 +148,7 @@
                 </div>
 
                 <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary btn-login text-white">
+                    <button type="submit" class="btn btn-success btn-login text-white">
                         MASUK SEKARANG <i class="fas fa-arrow-right ms-2"></i>
                     </button>
                 </div>

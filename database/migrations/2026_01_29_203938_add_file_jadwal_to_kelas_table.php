@@ -12,16 +12,15 @@ return new class extends Migration
 public function up()
 {
     Schema::table('kelas', function (Blueprint $table) {
-        // Menambahkan kolom relasi ke tahun_ajarans
-        // nullable() dipakai agar data lama tidak error saat dimigrate
-        $table->foreignId('tahun_ajaran_id')->nullable()->constrained('tahun_ajarans')->onDelete('cascade')->after('id');
+        // Kolom untuk menyimpan path file PDF
+        $table->string('file_jadwal')->nullable()->after('nama_kelas');
     });
 }
 
 public function down()
 {
     Schema::table('kelas', function (Blueprint $table) {
-        $table->dropForeign(['tahun_ajaran_id']);
-        $table->dropColumn('tahun_ajaran_id');
+        $table->dropColumn('file_jadwal');
     });
-}};
+}
+};

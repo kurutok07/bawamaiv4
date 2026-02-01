@@ -1,5 +1,5 @@
 /* ========================================= */
-/* === GLOBAL & BASE STYLES === */
+/* === GLOBAL & BASE STYLES (THEME: GREEN) === */
 /* ========================================= */
 
 /* Pengaturan Global & Font */
@@ -22,9 +22,9 @@ body {
   overflow-x: hidden;
 }
 
-/* KUNCI PENTING: Mencegah body scroll saat menu terbuka, namun navbar tetap sticky */
+/* KUNCI PENTING: Mencegah body scroll saat menu terbuka */
 body.menu-open {
-  overflow: hidden; /* Mencegah scroll pada body saat menu terbuka */
+  overflow: hidden;
 }
 
 .container {
@@ -40,8 +40,9 @@ body.menu-open {
 .main-header {
   background-color: #ffffff;
   padding: 20px 0;
-  box-shadow: 0 4px 10px rgba(0, 80, 150, 0.06);
-  position: sticky; /* NAVBAR STICKY: Pastikan tetap di atas */
+  /* Shadow hijau tipis */
+  box-shadow: 0 4px 10px rgba(0, 150, 80, 0.06);
+  position: sticky;
   top: 0;
   z-index: 100;
 }
@@ -55,7 +56,7 @@ body.menu-open {
   align-items: center;
   font-size: 1rem;
   font-weight: 800;
-  color: #0d47a1;
+  color: #1b5e20; 
   flex-shrink: 0;
 }
 .logo img {
@@ -86,7 +87,7 @@ body.menu-open {
 }
 
 .main-menu a:hover {
-  color: #0d47a1;
+  color: #1b5e20;
 }
 
 .main-menu a::after {
@@ -96,7 +97,7 @@ body.menu-open {
   height: 2px;
   bottom: 0;
   left: 0;
-  background-color: #0d47a1;
+  background-color: #1b5e20;
   transition: width 0.3s ease-out;
 }
 
@@ -108,14 +109,14 @@ body.menu-open {
   display: flex;
   align-items: center;
   max-width: 200px;
-  border: 2px solid #0d47a1;
+  border: 2px solid #1b5e20;
   border-radius: 25px;
   overflow: hidden;
   transition: box-shadow 0.3s ease;
 }
 
 .search-form-visible:focus-within {
-  box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.2);
+  box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.2);
 }
 
 .search-input {
@@ -142,7 +143,7 @@ body.menu-open {
 }
 
 .search-submit-btn:hover {
-  background-color: #e3f2fd;
+  background-color: #e8f5e9;
 }
 
 .search-submit-btn img {
@@ -165,7 +166,7 @@ body.menu-open {
   display: block;
   width: 25px;
   height: 3px;
-  background-color: #0d47a1;
+  background-color: #1b5e20;
   margin: 5px 0;
   transition: all 0.3s ease-in-out;
 }
@@ -188,8 +189,7 @@ body.menu-open {
   left: 0;
   width: 100%;
   height: 100%;
-  /* DIUBAH: Background transparan (menghilangkan warna gelap) */
-  background: rgba(255, 255, 255, 0);
+  background: rgba(255, 255, 255, 0); /* Transparan agar bersih */
   z-index: 998;
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
@@ -205,10 +205,10 @@ body.menu-open {
 
 .main-footer {
   padding: 25px 0;
-  background-color: #e0f7fa;
+  background-color: #e8f5e9;
   color: #555;
   font-size: 0.9rem;
-  border-top: 1px solid #ccecf2;
+  border-top: 1px solid #c8e6c9;
 }
 
 .footer-content {
@@ -247,13 +247,13 @@ body.menu-open {
   margin-top: -30px;
 }
 .social-icons a {
-  color: #337ab7;
+  color: #2e7d32;
   font-size: 1.3rem;
   transition: color 0.3s ease;
 }
 
 .social-icons a:hover {
-  color: #1565c0;
+  color: #1b5e20;
 }
 .social-icons a i {
   display: block;
@@ -278,7 +278,7 @@ body.dashboard-page {
 
 /* Hero Section */
 .hero-section {
-  background-color: #f0f8ff;
+  background-color: #f1f8e9;
   background-size: cover;
   background-position: center;
   height: 450px;
@@ -298,8 +298,8 @@ body.dashboard-page {
   height: 100%;
   background: linear-gradient(
     to right,
-    rgba(240, 248, 255, 0.8),
-    rgba(240, 248, 255, 0)
+    rgba(241, 248, 233, 0.8),
+    rgba(241, 248, 233, 0)
   );
   z-index: 1;
 }
@@ -332,7 +332,7 @@ body.dashboard-page {
 .hero-text h1 {
   font-size: 2.8rem;
   font-weight: 800;
-  color: #0d47a1;
+  color: #1b5e20;
   text-shadow: none;
   line-height: 1.2;
   margin: 0;
@@ -355,7 +355,7 @@ body.dashboard-page {
   text-align: center;
   font-size: 1.8rem;
   font-weight: 800;
-  color: #6d4c41;
+  color: #1b5e20;
   margin-top: 40px;
   margin-bottom: 30px;
 }
@@ -409,25 +409,13 @@ body.dashboard-page {
   text-transform: uppercase;
 }
 
-/* Pewarnaan Kartu Fitur Dashboard */
-#fitur-qurana .fitur-card-icon-bg {
-  background-color: #e4f5e9;
-}
-#fitur-smart .fitur-card-icon-bg {
-  background-color: #fff9c4;
-}
-#fitur-library .fitur-card-icon-bg {
-  background-color: #e4f5e9;
-}
-#fitur-khot .fitur-card-icon-bg {
-  background-color: #ffe0b2;
-}
-#fitur-kebiasaan .fitur-card-icon-bg {
-  background-color: #e3f2fd;
-}
-#fitur-raport .fitur-card-icon-bg {
-  background-color: #e3f2fd;
-}
+/* Pewarnaan Kartu Fitur */
+#fitur-qurana .fitur-card-icon-bg { background-color: #e8f5e9; }
+#fitur-smart .fitur-card-icon-bg { background-color: #fff9c4; }
+#fitur-library .fitur-card-icon-bg { background-color: #c8e6c9; }
+#fitur-khot .fitur-card-icon-bg { background-color: #ffe0b2; }
+#fitur-kebiasaan .fitur-card-icon-bg { background-color: #dcedc8; }
+#fitur-raport .fitur-card-icon-bg { background-color: #e8f5e9; }
 
 /* Kelas 'show' untuk animasi fade-in JS */
 .fitur-card.show {
@@ -454,20 +442,20 @@ body.dashboard-page {
   .main-nav {
     position: fixed;
     top: 0;
-    right: -100%; /* Sembunyikan ke kanan */
+    right: -100%; /* Default Sembunyi */
     width: 80%;
     max-width: 300px;
     height: 100vh;
     background-color: #ffffff;
     z-index: 1000;
-    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
     padding: 80px 30px 30px;
     gap: 25px;
-    transition: right 0.3s ease-in-out;
+    transition: right 0.4s cubic-bezier(0.77, 0, 0.175, 1); /* Transisi Halus */
   }
   .main-nav.active {
     right: 0; /* Tampilkan */
@@ -481,14 +469,19 @@ body.dashboard-page {
     padding: 0;
   }
 
-  /* Pastikan link di sidebar (HP) bisa diklik dan menutup menu */
   .main-menu li {
     width: 100%;
   }
   .main-menu a {
-    padding: 10px 0;
+    padding: 12px 0;
     display: block;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #f1f8e9; /* Garis pemisah halus */
+    color: #333;
+  }
+  
+  .main-menu a:hover {
+    color: #1b5e20;
+    padding-left: 5px; /* Efek geser dikit saat hover */
   }
 
   .search-form-visible {
@@ -496,7 +489,7 @@ body.dashboard-page {
     max-width: 100%;
     width: 100%;
     margin: 0;
-    border-color: #1565c0; /* Warna lebih jelas di sidebar */
+    border-color: #2e7d32; 
   }
 
   /* Hero & Footer Responsive */
@@ -516,8 +509,8 @@ body.dashboard-page {
   .hero-section::before {
     background: linear-gradient(
       to right,
-      rgba(240, 248, 255, 0.9),
-      rgba(240, 248, 255, 0.9)
+      rgba(241, 248, 233, 0.9),
+      rgba(241, 248, 233, 0.9)
     );
   }
   .fitur-wrapper {

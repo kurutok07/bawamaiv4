@@ -4,66 +4,120 @@ namespace App\Imports;
 
 use App\Models\Siswa;
 use App\Models\User;
+use App\Models\Kelas;       
+use App\Models\TahunAjaran; 
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB; // Tambahkan DB Facade
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use PhpOffice\PhpSpreadsheet\Shared\Date; // <--- PENTING UNTUK TANGGAL
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+use Carbon\Carbon;
 
 class SiswaImport implements ToModel, WithHeadingRow
 {
-    public function model(array $row)
-    {
-        // DEBUGGING: Aktifkan baris ini jika ingin melihat apa yang dibaca Laravel
-        // dd($row); 
+    private $activeTa;
 
-        // 1. Cek Data Wajib (NIS & Nama). Jika kosong, skip.
-        if (!isset($row['nis']) || !isset($row['nama_lengkap'])) {
+    public function __construct()
+    {
+        $this->activeTa = TahunAjaran::where('is_active', 1)->first();
+    }
+
+    private function transformDate($value)
+    {
+        if (!$value) return null;
+        try {
+            if (is_numeric($value)) {
+                return Date::excelToDateTimeObject($value)->format('Y-m-d');
+            }
+            return Carbon::parse($value)->format('Y-m-d');
+        } catch (\Exception $e) {
             return null;
         }
+    }
 
-        // 2. LOGIC TANGGAL: Konversi format Excel ke format SQL (Y-m-d)
-        $tanggalLahir = null;
-        if (isset($row['tanggal_lahir'])) {
-            try {
-                // Jika Excel mengirim angka (serial number), convert pakai class Date
-                if (is_numeric($row['tanggal_lahir'])) {
-                    $tanggalLahir = Date::excelToDateTimeObject($row['tanggal_lahir'])->format('Y-m-d');
-                } 
-                // Jika Excel mengirim teks (2001/02/17 atau 17-02-2001)
-                else {
-                    $tanggalLahir = date('Y-m-d', strtotime($row['tanggal_lahir']));
-                }
-            } catch (\Exception $e) {
-                $tanggalLahir = null; // Jika format kacau, set null biar gak error
-            }
+    public function model(array $row)
+    {
+        // 1. Cek Data Wajib
+        if (empty($row['nisn']) || empty($row['nama_lengkap'])) {
+            return null;
         }
-
-        // 3. LOGIC USER
+        $emailUser = !empty($row['email']) ? $row['email'] : $row['nisn'] . '@siswa.bawamai.id';
+        // 2. LOGIC USER (Create or Ignore)
+        // Kita pakai firstOrCreate agar password tidak ter-reset kalau user sudah ada.
         $user = User::firstOrCreate(
-            ['username' => $row['nis']], 
+            ['username' => $row['nisn']], 
             [
                 'name'     => $row['nama_lengkap'],
-                'email'    => !empty($row['email']) ? $row['email'] : null,
-                'password' => Hash::make($row['nis']),
+                'email'    => $emailUser, 
+                'password' => Hash::make($row['nisn']), 
                 'role'     => 'siswa',
             ]
         );
 
-        // 4. LOGIC SISWA
-        return Siswa::updateOrCreate(
-            ['user_id' => $user->id], // Kunci update: User ID (lebih aman daripada NIS kalau usernya update)
+        // Jika nama di Excel beda dengan di DB, update nama User juga
+        if ($user->name !== $row['nama_lengkap']) {
+            $user->update(['name' => $row['nama_lengkap']]);
+        }
+        if (!empty($row['email']) && $user->email !== $row['email']) {
+             $user->update(['email' => $row['email']]);
+        }
+
+        // 3. LOGIC SISWA (Update or Create)
+        $siswa = Siswa::updateOrCreate(
+            ['nisn' => $row['nisn']], 
             [
-                'nis'           => $row['nis'],
-                'nama_lengkap'  => $row['nama_lengkap'],
-                'jenis_kelamin' => isset($row['jenis_kelamin']) ? strtoupper($row['jenis_kelamin']) : null,
-                'nisn'          => $row['nisn'] ?? null,
-                'tempat_lahir'  => $row['tempat_lahir'] ?? null,
-                'tanggal_lahir' => $tanggalLahir, // Gunakan variabel hasil konversi di atas
-                'nama_wali'     => $row['nama_wali'] ?? null,
-                'no_hp_wali'    => $row['no_hp_wali'] ?? null,
-                'alamat'        => $row['alamat'] ?? null,
-                // Pastikan kolom ini ada di fillable Model Siswa
+                'user_id'        => $user->id,
+                'nik'            => $row['nik'] ?? null,   
+                'nama_lengkap'   => $row['nama_lengkap'],
+                'jenis_kelamin'  => isset($row['jenis_kelamin']) ? strtoupper($row['jenis_kelamin']) : 'L',
+                'tempat_lahir'   => $row['tempat_lahir'] ?? null,
+                'tanggal_lahir'  => $this->transformDate($row['tanggal_lahir'] ?? null),
+                'nama_wali'      => $row['nama_wali'] ?? null,
+                'no_hp_wali'     => $row['no_hp_wali'] ?? null,
+                'alamat'         => $row['alamat'] ?? null,
             ]
         );
+
+        // 4. LOGIC MASUK KELAS OTOMATIS
+        if (!empty($row['rombel']) && $this->activeTa) {
+            
+            $namaKelasExcel = trim($row['rombel']); 
+
+            // Cari Kelas di Tahun Ajaran Aktif
+            // Penting: Pastikan kelas yang dicari adalah kelas Tahun INI.
+            $kelas = Kelas::where('tahun_ajaran_id', $this->activeTa->id)
+                          ->where(function($q) use ($namaKelasExcel) {
+                              $q->where('nama_kelas', $namaKelasExcel)
+                                ->orWhere('nama_kelas', 'LIKE', '%'.$namaKelasExcel.'%');
+                          })->first();
+
+            if ($kelas) {
+                // --- PERBAIKAN LOGIC (MENCEGAH DUPLIKAT KELAS DI TAHUN SAMA) ---
+                
+                // Cek apakah siswa sudah punya kelas LAIN di tahun ini?
+                $existingRecord = DB::table('kelas_siswa')
+                                    ->where('siswa_id', $siswa->id)
+                                    ->where('tahun_ajaran_id', $this->activeTa->id)
+                                    ->first();
+
+                if ($existingRecord) {
+                    // Jika sudah ada, tapi beda kelas -> UPDATE (Pindah Kelas)
+                    if ($existingRecord->kelas_id != $kelas->id) {
+                        DB::table('kelas_siswa')
+                            ->where('id', $existingRecord->id)
+                            ->update([
+                                'kelas_id' => $kelas->id,
+                                'updated_at' => now()
+                            ]);
+                    }
+                    // Jika kelasnya sama, biarkan (Skip)
+                } else {
+                    // Jika belum ada di tahun ini -> INSERT BARU (Naik Kelas / Siswa Baru)
+                    $siswa->kelas()->attach($kelas->id, ['tahun_ajaran_id' => $this->activeTa->id]);
+                }
+            }
+        }
+
+        return $siswa;
     }
 }

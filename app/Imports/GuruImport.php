@@ -4,45 +4,93 @@ namespace App\Imports;
 
 use App\Models\Guru;
 use App\Models\User;
+use App\Models\Kelas;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use PhpOffice\PhpSpreadsheet\Shared\Date; // Library bawaan Excel untuk convert tanggal
+use Carbon\Carbon;
 
 class GuruImport implements ToModel, WithHeadingRow
 {
+    /**
+    * Fungsi Helper untuk mengubah Tanggal Excel (Angka) ke Format MySQL (YYYY-MM-DD)
+    */
+    private function transformDate($value)
+    {
+        if (!$value) return null;
+
+        try {
+            // 1. Jika formatnya Angka Serial Excel (Contoh: 42186)
+            if (is_numeric($value)) {
+                return Date::excelToDateTimeObject($value)->format('Y-m-d');
+            }
+            
+            // 2. Jika formatnya sudah Teks (Contoh: "1990-05-05" atau "05/05/1990")
+            return Carbon::parse($value)->format('Y-m-d');
+        } catch (\Exception $e) {
+            // Jika format ngaco/error, biarkan null daripada bikin error import
+            return null;
+        }
+    }
+
     public function model(array $row)
     {
-        // 1. Validasi dasar
-        if (!isset($row['nip']) || $row['nip'] == null) {
+        // 1. Validasi Dasar
+        if (!isset($row['nuptk']) || $row['nuptk'] == null) {
             return null;
         }
 
-        // 2. LOGIC: Cari User dulu, kalau gak ada baru Buat (firstOrCreate)
-        // Kita simpan hasilnya ke variabel $user agar bisa diambil ID-nya
+        // 2. Logic User (Login)
         $user = User::firstOrCreate(
-            ['username' => $row['nip']], // Cek berdasarkan NIP
+            ['username' => $row['nuptk']], 
             [
                 'name'      => $row['nama_lengkap'],
-                'email'     => $row['email'] ?? $row['nip'].'@bawamai.sch.id',
-                'password'  => Hash::make($row['nip']), // Default Password = NIP
+                'email'     => $row['email'] ?? $row['nuptk'].'@bawamai.sch.id',
+                'password'  => Hash::make($row['nuptk']),
                 'role'      => 'guru',
             ]
         );
 
-        // 3. Return Data Guru (Sekarang sudah bawa user_id)
-        // Gunakan updateOrCreate agar kalau upload ulang data gak duplikat/error
-        return Guru::updateOrCreate(
-            ['nip' => $row['nip']], // Kunci pencarian (NIP)
+        // 3. Logic Simpan Guru
+        $guru = Guru::updateOrCreate(
+            ['nuptk' => $row['nuptk']], 
             [
-                'user_id'        => $user->id, // <--- INI YG PENTING (Jembatannya)
-                'nama_lengkap'   => $row['nama_lengkap'],
-                'gelar_depan'    => $row['gelar_depan'] ?? null,
-                'gelar_belakang' => $row['gelar_belakang'] ?? null,
-                'jenis_kelamin'  => isset($row['jenis_kelamin']) ? strtoupper($row['jenis_kelamin']) : null,
-                'no_hp'          => $row['no_hp'] ?? null,
-                'email'          => $row['email'] ?? null,
-                'foto'           => null,
+                'user_id'             => $user->id,
+                'nip'                 => $row['nip'] ?? null,
+                'nama_lengkap'        => $row['nama_lengkap'],
+                'gelar_depan'         => $row['gelar_depan'] ?? null,
+                'gelar_belakang'      => $row['gelar_belakang'] ?? null,
+                'jenis_kelamin'       => isset($row['jenis_kelamin']) ? strtoupper($row['jenis_kelamin']) : 'L',
+                'status_kepegawaian'  => $row['status_kepegawaian'] ?? 'HONORER',
+                'tugas_tambahan'      => $row['tugas_tambahan'] ?? null,
+                'tempat_lahir'        => $row['tempat_lahir'] ?? null,
+                
+                // --- GUNAKAN HELPER transformDate DI SINI ---
+                'tanggal_lahir'       => $this->transformDate($row['tanggal_lahir'] ?? null), 
+                'tmt_sekolah'         => $this->transformDate($row['tmt_sekolah'] ?? null),
+                // --------------------------------------------
+
+                'alamat'              => $row['alamat'] ?? null,
+                'pendidikan_terakhir' => $row['pendidikan_terakhir'] ?? null,
+                'tahun_lulus'         => $row['tahun_lulus'] ?? null,
+                'masa_kerja_sd'       => $row['masa_kerja_sd'] ?? null,
+                'masa_kerja_total'    => $row['masa_kerja_total'] ?? null,
+                'no_hp'               => $row['no_hp'] ?? null,
+                'email'               => $row['email'] ?? null,
             ]
         );
+
+        // 4. Logic Otomatis Set Wali Kelas
+        if (isset($row['wali_kelas_di']) && $row['wali_kelas_di'] != null) {
+            $kelas = Kelas::where('nama_kelas', $row['wali_kelas_di'])->first();
+            if ($kelas) {
+                $kelas->update([
+                    'wali_kelas_id' => $guru->id
+                ]);
+            }
+        }
+
+        return $guru;
     }
 }

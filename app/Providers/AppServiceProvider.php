@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Auth\Events\Login;
+use App\Listeners\LogSuccessfulLogin;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // --- TAMBAHKAN INI ---
+        // Setiap kali ada event Login, jalankan listener LogSuccessfulLogin
+        Event::listen(
+            Login::class,
+            LogSuccessfulLogin::class,
+        );
     }
 }

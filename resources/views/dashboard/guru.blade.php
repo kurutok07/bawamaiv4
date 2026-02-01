@@ -7,184 +7,180 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <style>
-        /* --- RESET & VARIABLES (Sama seperti Admin) --- */
-        :root {
-            --primary-bg: #4b95d2d6; /* Biru Background */
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #000000ff;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
+    {{-- TAMBAHAN: Bootstrap 5 (Wajib untuk Modal & Navbar) --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+    <style>
+        /* --- RESET CONFLICT --- */
+        a { text-decoration: none; }
+
+        /* --- VARIABLES (GREEN THEME) --- */
+        :root {
+            --primary-bg: #e8f5e9; /* Hijau Mint Lembut */
+            --card-bg: #ffffff;
+            --text-main: #1b5e20;  /* Hijau Tua */
+            --text-body: #374151;  /* Abu Gelap */
+            --green-accent: #2e7d32;
+            --green-dark: #1b5e20;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
 
         body {
             font-family: 'Nunito', sans-serif;
             background-color: var(--primary-bg);
-            color: var(--text-main);
+            color: var(--text-body);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
         }
 
-        /* --- HEADER --- */
+        /* --- HEADER & NAVBAR --- */
         .main-header {
             background-color: #ffffff;
             box-shadow: var(--shadow-sm);
             padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 50;
+            position: sticky; top: 0; z-index: 50;
+            border-bottom: 4px solid var(--green-accent);
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
+            max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;
         }
 
         .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
         }
 
         .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 800;
-            font-size: 1.25rem;
-            color: #111827;
-            text-decoration: none;
+            display: flex; align-items: center; gap: 12px;
+            font-weight: 800; font-size: 1.35rem; color: var(--green-dark);
+            letter-spacing: -0.5px;
         }
-        .logo img { height: 45px; width: auto; }
+        .logo img { height: 48px; width: auto; }
 
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 20px;
+        /* NAV MENU (Desktop) */
+        .nav-menu {
+            display: flex; align-items: center; gap: 20px;
         }
 
-        .user-name {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            background: #f9fafb;
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid #e5e7eb;
+        .nav-link-custom {
+            color: #555; font-weight: 700; font-size: 0.95rem;
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 16px; border-radius: 20px; transition: all 0.2s;
         }
+        .nav-link-custom:hover { background-color: #c8e6c9; color: var(--green-dark); }
 
         .btn-logout {
-            background: none;
-            border: none;
-            color: #ef4444;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            transition: color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
+            color: #ef4444 !important;
+            border: 1px solid transparent;
         }
-        .btn-logout:hover { color: #dc2626; }
+        .btn-logout:hover { 
+            background-color: #fee2e2; 
+            color: #dc2626 !important; 
+            border-color: #ef4444;
+        }
 
-        /* --- MAIN CONTENT --- */
-        main { flex: 1; padding: 3rem 0; }
+        /* AVATAR */
+        .nav-avatar {
+            width: 35px; height: 35px; border-radius: 50%; object-fit: cover;
+            border: 2px solid #a5d6a7;
+        }
 
-        .page-header { text-align: center; margin-bottom: 3rem; }
-        .page-title { font-size: 2rem; font-weight: 800; color: #111827; margin-bottom: 0.5rem; }
-        .page-subtitle { color: var(--text-muted); font-size: 1.1rem; }
+        /* HAMBURGER (Mobile) */
+        .nav-toggle {
+            display: none; background: none; border: none; cursor: pointer;
+            flex-direction: column; gap: 5px;
+        }
+        .hamburger-line {
+            width: 25px; height: 3px; background-color: var(--green-dark); border-radius: 5px;
+        }
 
-        /* --- GRID SYSTEM --- */
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .nav-toggle { display: flex; }
+            
+            .nav-menu {
+                position: fixed; top: 80px; left: 0; width: 100%;
+                background: white; flex-direction: column;
+                padding: 20px; gap: 15px;
+                box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+                transform: translateY(-150%); transition: transform 0.3s ease;
+                align-items: flex-start;
+            }
+            .nav-menu.active { transform: translateY(0); }
+            .header-content { justify-content: space-between; }
+        }
+
+        /* --- CONTENT --- */
+        main { flex: 1; padding: 3.5rem 0; }
+        
+        .page-header { text-align: center; margin-bottom: 3.5rem; }
+        
+        .page-title { 
+            font-size: 2.25rem; font-weight: 900; 
+            color: var(--green-dark); margin-bottom: 0.5rem; 
+            letter-spacing: -0.5px;
+        }
+        
+        .page-subtitle { color: #555; font-size: 1.15rem; font-weight: 500; }
+
+        /* --- GRID --- */
         .guru-grid-wrapper {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Lebih lebar dikit karena menunya sedikit */
-            gap: 2rem;
-            max-width: 1000px; /* Batasi lebar agar kartu tidak terlalu melar */
-            margin: 0 auto;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem; max-width: 1000px; margin: 0 auto;
         }
 
-        /* --- CARDS --- */
+        /* --- CARDS (High Contrast) --- */
         .guru-card {
             background-color: var(--card-bg);
-            border-radius: 1rem;
-            padding: 2.5rem 2rem;
-            text-align: center;
-            text-decoration: none;
-            box-shadow: var(--shadow-md);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(0,0,0,0.02);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
+            border-radius: 1.25rem; padding: 2.5rem 2rem;
+            text-align: center; text-decoration: none;
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; position: relative;
+            border-top: 5px solid transparent; /* Border Top Warna Warni */
         }
-
-        .guru-card:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--shadow-lg);
-        }
+        .guru-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-hover); }
 
         .icon-wrapper {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            transition: transform 0.3s ease;
+            width: 80px; height: 80px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 1.5rem; transition: transform 0.4s ease;
+            color: white; font-size: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
-
-        .guru-card:hover .icon-wrapper { transform: scale(1.1) rotate(5deg); }
-        .guru-card svg, .guru-card i { font-size: 35px; color: white; }
+        .guru-card:hover .icon-wrapper { transform: scale(1.15) rotate(5deg); }
 
         .guru-card h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #374151;
-            margin-bottom: 0.5rem;
+            font-size: 1.25rem; font-weight: 800; color: var(--text-body); margin-bottom: 0.5rem;
         }
-
         .guru-card p {
-            font-size: 0.9rem;
-            color: #6b7280;
-            line-height: 1.4;
+            font-size: 0.95rem; color: #666; line-height: 1.5;
         }
 
-        /* --- WARNA KARTU --- */
-        /* E-Rapor (Hijau Emerald) */
-        .card-rapor .icon-wrapper { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3); }
+        /* --- CARD SPECIFIC COLORS --- */
         
-        /* Smart Learning (Biru Utama) */
-        .card-lms .icon-wrapper { background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); }
-        
-        /* Analytics (Ungu) */
-        .card-analytics .icon-wrapper { background: linear-gradient(135deg, #8b5cf6, #7c3aed); box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3); }
+        /* 1. E-Rapot (Orange) */
+        .card-rapor { border-top-color: #fb8c00; }
+        .card-rapor .icon-wrapper { background: linear-gradient(135deg, #ffa726, #ef6c00); }
+
+        /* 2. LMS (Blue) */
+        .card-lms { border-top-color: #1e88e5; }
+        .card-lms .icon-wrapper { background: linear-gradient(135deg, #42a5f5, #1565c0); }
+
+        /* 3. Analytics (Teal) - Biar beda dari ijo biasa */
+        .card-analytics { border-top-color: #00897b; }
+        .card-analytics .icon-wrapper { background: linear-gradient(135deg, #26a69a, #00695c); }
 
         /* --- FOOTER --- */
         .main-footer {
-            background: white;
-            padding: 1.5rem 0;
-            text-align: center;
-            border-top: 1px solid #f3f4f6;
-            margin-top: auto;
+            background: white; padding: 2rem 0; text-align: center;
+            border-top: 1px solid #e5e7eb; margin-top: auto;
         }
-        .footer-copyright { color: #9ca3af; font-size: 0.85rem; font-weight: 600; }
-
-        /* --- RESPONSIVE --- */
-        @media (max-width: 768px) {
-            .header-content { flex-direction: column; gap: 1rem; }
-            .guru-grid-wrapper { grid-template-columns: 1fr; }
-        }
+        .footer-copyright { color: #888; font-size: 0.9rem; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -192,18 +188,37 @@
     <header class="main-header">
         <div class="container header-content">
             <a href="#" class="logo">
-                {{-- Pastikan file asset logo ada --}}
                 <img src="{{ asset('assets/1.png') }}" alt="Logo SD Bawamai" onerror="this.style.display='none'"> 
                 <span>Ruang Guru Bawamai</span>
             </a>
 
-            <nav class="user-menu">
-                <span class="user-name">Halo, <strong>{{ Auth::user()->name }}</strong> (Guru)</span>
-                <form action="{{ route('logout') }}" method="POST">
+            {{-- HAMBURGER BTN --}}
+            <button class="nav-toggle" id="navToggleBtn">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+
+            <nav class="nav-menu" id="navMenu">
+                {{-- Nama User & Avatar --}}
+                <a href="#" class="nav-link-custom" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                    @if(Auth::user()->foto_profil)
+                        <img src="{{ asset(Auth::user()->foto_profil) }}" class="nav-avatar" alt="Profil">
+                    @else
+                        <div class="nav-avatar bg-light d-flex align-items-center justify-content-center border">
+                            <i class="fas fa-user text-secondary" style="font-size: 1rem;"></i>
+                        </div>
+                    @endif
+                    <span>{{ Auth::user()->name }}</span>
+                </a>
+
+            
+                {{-- Logout --}}
+                <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="nav-link-custom btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Keluar
+                </a>
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                     @csrf
-                    <button type="submit" class="btn-logout">
-                        Logout <i class="fa fa-sign-out-alt"></i>
-                    </button>
                 </form>
             </nav>
         </div>
@@ -211,6 +226,20 @@
 
     <main>
         <div class="container">
+            {{-- ALERT MESSAGES --}}
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show mb-4 shadow-sm" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+            @if($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show mb-4 shadow-sm" role="alert">
+                    <ul class="mb-0 ps-3">@foreach($errors->all() as $error) <li>{{ $error }}</li> @endforeach</ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
             <div class="page-header">
                 <h1 class="page-title">Menu Utama Guru</h1>
                 <p class="page-subtitle">Selamat datang di panel pengelolaan kelas dan pembelajaran.</p>
@@ -218,33 +247,25 @@
             
             <div class="guru-grid-wrapper">
                 
-                {{-- 1. E-RAPOR (Akan kita buat fiturnya setelah ini) --}}
-                {{-- Menggunakan route sementara '#' nanti kita ganti ke 'raport-guru.index' --}}
+                {{-- 1. E-RAPOR --}}
                 <a href="{{ route('guru.raport.index') }}" class="guru-card card-rapor">
-                        <div class="icon-wrapper">
-                        <i class="fas fa-book-open"></i>
-                    </div>
+                    <div class="icon-wrapper"><i class="fas fa-book-open"></i></div>
                     <h3>e-Rapot</h3>
                     <p>Input dan upload berkas raport siswa per semester.</p>
                 </a>
 
-                {{-- 2. SMART LEARNING (Link ke Landing Page / LMS) --}}
-                <a href="{{ route('landing') }}" class="guru-card card-lms">
-                    <div class="icon-wrapper">
-                        <i class="fas fa-rocket"></i>
-                    </div>
-                    <h3>Smart Learning</h3>
-                    <p>Akses materi pembelajaran dan modul LMS.</p>
+                {{-- 2. MANAJEMEN LMS --}}
+                <a href="{{ route('lms-items.index') }}" class="guru-card card-lms">
+                    <div class="icon-wrapper"><i class="fas fa-chalkboard-teacher"></i></div>
+                    <h3>Manajemen LMS</h3>
+                    <p>Upload materi, kelola folder kelas, dan tugas.</p>
                 </a>
 
-                {{-- 3. ANALYTICS (Bypass ke Analytics Admin) --}}
-                {{-- Pastikan route 'admin.analytics' bisa diakses oleh role guru di web.php --}}
+                {{-- 3. ANALYTICS SISWA --}}
                 <a href="{{ route('admin.analytics') }}" class="guru-card card-analytics">
-                    <div class="icon-wrapper">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <h3>Analytics</h3>
-                    <p>Pantau aktivitas belajar dan statistik akses siswa.</p>
+                    <div class="icon-wrapper"><i class="fas fa-chart-pie"></i></div>
+                    <h3>Statistik Belajar</h3>
+                    <p>Lihat keaktifan siswa membuka materi Anda.</p>
                 </a>
                 
             </div>
@@ -258,5 +279,98 @@
             </div>
         </div>
     </footer>
+
+    {{-- MODAL PENGATURAN (SETTINGS) --}}
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header text-white" style="background-color: var(--green-dark);">
+                    <h5 class="modal-title"><i class="fas fa-cog me-2"></i> Pengaturan Akun</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs nav-justified mb-3" id="settingTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active text-success" id="foto-tab" data-bs-toggle="tab" href="#foto" role="tab">Foto Profil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-secondary" id="pass-tab" data-bs-toggle="tab" href="#pass" role="tab">Ganti Password</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        {{-- TAB FOTO --}}
+                        <div class="tab-pane fade show active" id="foto" role="tabpanel">
+                            <form action="{{ route('profile.updateFoto') }}" method="POST" enctype="multipart/form-data">
+                                @csrf
+                                <div class="text-center mb-3">
+                                    @if(Auth::user()->foto_profil)
+                                        <img src="{{ asset(Auth::user()->foto_profil) }}" id="previewImg" class="rounded-circle mb-2 border shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+                                    @else
+                                        {{-- Placeholder --}}
+                                        <div id="previewPlaceholder" class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto border mb-2" style="width: 100px; height: 100px;">
+                                            <i class="fas fa-user fa-3x text-secondary"></i>
+                                        </div>
+                                        {{-- Image hidden untuk preview JS --}}
+                                        <img src="#" id="previewImg" class="rounded-circle mb-2 border d-none" style="width: 100px; height: 100px; object-fit: cover;">
+                                    @endif
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Upload Foto Baru (Max 2MB)</label>
+                                    <input type="file" name="foto" class="form-control" accept="image/*" onchange="previewFile(this)">
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 rounded-pill">Simpan Foto</button>
+                            </form>
+                        </div>
+                        {{-- TAB PASSWORD --}}
+                        <div class="tab-pane fade" id="pass" role="tabpanel">
+                            <form action="{{ route('profile.updatePassword') }}" method="POST">
+                                @csrf
+                                <div class="mb-2">
+                                    <label class="small fw-bold">Password Lama</label>
+                                    <input type="password" name="current_password" class="form-control" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="small fw-bold">Password Baru</label>
+                                    <input type="password" name="password" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="small fw-bold">Konfirmasi Password Baru</label>
+                                    <input type="password" name="password_confirmation" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100 rounded-pill text-white">Ganti Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SCRIPTS --}}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Hamburger Toggle
+        document.getElementById('navToggleBtn').addEventListener('click', function() {
+            document.getElementById('navMenu').classList.toggle('active');
+        });
+
+        // Preview Image
+        function previewFile(input) {
+            var file = input.files[0];
+            if(file){
+                var reader = new FileReader();
+                reader.onload = function(){
+                    var previewImg = document.getElementById('previewImg');
+                    var placeholder = document.getElementById('previewPlaceholder');
+                    if(previewImg) {
+                        previewImg.src = reader.result;
+                        previewImg.classList.remove('d-none');
+                    }
+                    if(placeholder) placeholder.classList.add('d-none');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
 </body>
 </html>

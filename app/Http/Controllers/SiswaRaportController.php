@@ -6,8 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
-use App\Models\RaportFile; // <--- Import Model File
-use App\Models\RaportCategory; // <--- Import Model Kategori
+use App\Models\RaportFile; 
+use App\Models\RaportCategory; 
 
 class SiswaRaportController extends Controller
 {
@@ -21,8 +21,9 @@ class SiswaRaportController extends Controller
         }
 
         // 1. Ambil Riwayat Kelas
+        // Menggunakan withPivot('tahun_ajaran_id') dari model Siswa
         $riwayatKelas = $siswa->riwayatKelas()
-                        ->with(['waliKelas'])
+                        ->with(['waliKelas', 'tahunAjaran']) // Load relasi biar namanya muncul
                         ->get()
                         ->sortByDesc(function($kelas) {
                             return $kelas->pivot->tahun_ajaran_id; 
@@ -31,58 +32,45 @@ class SiswaRaportController extends Controller
         // 2. Ambil List Tahun Ajaran (Kamus ID => Nama)
         $listTahun = TahunAjaran::pluck('tahun', 'id');
 
-        // 3. LOGIC BARU: Cek Ketersediaan File Raport
-        // Ambil semua file milik siswa ini
-$files = RaportFile::with('category')
+        // 3. LOGIC BARU: Mapping File Raport
+        $files = RaportFile::with('category')
                     ->where('student_id', $siswa->id)
                     ->get();
 
         $fileMap = [];
         
         foreach ($files as $file) {
-            // Ambil nama kategori dan ID-nya
+            // Logic Deteksi Ganjil/Genap
             $kategoriNama = strtolower($file->category->nama ?? '');
             $kategoriId   = $file->raport_category_id;
             
             $jenis = 'unknown';
 
-            // CARA 1: Deteksi dari Nama (Prioritas Utama)
+            // Cek by Nama
             if (str_contains($kategoriNama, 'ganjil')) {
                 $jenis = 'ganjil';
             } elseif (str_contains($kategoriNama, 'genap')) {
                 $jenis = 'genap';
             }
 
-            // CARA 2: Deteksi dari ID (Fallback / Cadangan)
-            // Jika Cara 1 gagal (hasil masih unknown), kita cek ID-nya
-            // SILAHKAN SESUAIKAN ID INI DENGAN HASIL QUERY 'raport_categories' KAMU
+            // Cek by ID (Fallback)
             if ($jenis === 'unknown') {
-                if ($kategoriId == 1) { 
-                    $jenis = 'ganjil'; // Asumsi ID 1 itu Ganjil
-                } elseif ($kategoriId == 2) {
-                    $jenis = 'genap';  // Asumsi ID 2 itu Genap
-                }
+                if ($kategoriId == 1) $jenis = 'ganjil';
+                elseif ($kategoriId == 2) $jenis = 'genap';
             }
 
-            // Jika masih unknown, skip loop ini
             if ($jenis === 'unknown') continue;
 
             // Generate URL
-            $parts = explode('/', $file->file_path);
+            // Pastikan path-nya benar sesuai penyimpanan controller upload
+            $url = asset('storage/' . $file->file_path);
             
-            // Fix jika path mengandung folder (raport_files/nama.pdf)
-            // Logic ini menangani path baik yang "folder/file.pdf" maupun "file.pdf" saja
-            $filename = end($parts); // Ambil bagian terakhir (nama filenya)
-            $folder   = count($parts) > 1 ? $parts[0] : 'raport_files'; // Default folder jika tidak terdeteksi
-            
-            // Namun karena kamu pakai route utility /storage/{folder}/{filename}
-            // Kita harus pastikan formatnya benar
-            if(count($parts) >= 2) {
-                $url = url("/storage/{$parts[0]}/{$parts[1]}");
-                $fileMap[$file->kelas_id][$jenis] = $url;
-            }
+            // --- PERBAIKAN UTAMA DISINI ---
+            // Simpan berdasarkan [KELAS] DAN [TAHUN]
+            // Agar raport tahun lalu tetap aman pada tempatnya
+            $fileMap[$file->kelas_id][$file->tahun_ajaran_id][$jenis] = $url;
         }
 
-        return view('siswa.raport.index', compact('riwayatKelas', 'siswa', 'listTahun', 'fileMap'));  }  
-    // Method show() bisa kita hapus atau biarkan saja (tidak terpakai di logic modal ini)
+        return view('siswa.raport.index', compact('riwayatKelas', 'siswa', 'listTahun', 'fileMap'));
+    }
 }

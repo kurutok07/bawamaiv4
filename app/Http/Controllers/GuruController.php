@@ -15,10 +15,10 @@ class GuruController extends Controller
 {
     public function index()
     {
-        $gurus = Guru::orderBy('nama_lengkap', 'asc')->get();
-        return view('admin.guru.index', compact('gurus'));
+    $gurus = Guru::orderBy('nama_lengkap')->paginate(10); 
+        
+    return view('admin.guru.index', compact('gurus'));
     }
-
 public function store(Request $request)
     {
         $request->validate([

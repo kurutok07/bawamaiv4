@@ -11,7 +11,7 @@ class Kelas extends Model
     use HasFactory;
 
     protected $table = 'kelas'; 
-    protected $fillable = ['nama_kelas', 'wali_kelas_id', 'tahun_ajaran_id'];
+    protected $fillable = ['nama_kelas', 'wali_kelas_id', 'tingkat', 'tahun_ajaran_id', 'file_jadwal'];
 
     // Relasi ke Guru
     public function waliKelas()
@@ -33,5 +33,12 @@ public function tahunAjaran()
     {
         return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id');
     }
+    // Relasi ke Guru Pengajar (Many-to-Many)
+public function gurus()
+{
+    return $this->belongsToMany(Guru::class, 'guru_kelas', 'kelas_id', 'guru_id')
+                ->withPivot('tahun_ajaran_id')
+                ->withTimestamps();
+}
 
 }

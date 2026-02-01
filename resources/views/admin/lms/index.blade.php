@@ -1,4 +1,6 @@
-@extends('layouts.admin') {{-- Pastikan layout admin Anda sudah memuat Bootstrap JS --}}
+@extends('layouts.admin')
+
+@section('title', 'Manajemen LMS')
 
 @section('content')
 <style>
@@ -10,6 +12,7 @@
         border: 1px solid #e3e6f0;
         border-radius: 15px;
         overflow: hidden;
+        background: white;
     }
     
     .lms-card:hover {
@@ -37,27 +40,6 @@
         margin-bottom: 15px;
     }
 
-    /* Tombol Hapus Kecil di Pojok */
-    .btn-delete-mini {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: rgba(255, 255, 255, 0.8);
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #e74a3b;
-        z-index: 10; /* Agar di atas clickable area */
-        transition: all 0.2s;
-    }
-    .btn-delete-mini:hover {
-        background: #e74a3b;
-        color: white;
-    }
-
     /* Warna Icon */
     .icon-folder { color: #f6c23e; } /* Kuning */
     .icon-pdf { color: #e74a3b; }    /* Merah */
@@ -66,7 +48,7 @@
 
     /* Modal Styles */
     .modal-preview-content {
-        height: 75vh; /* Tinggi Modal */
+        height: 75vh;
     }
     iframe.preview-frame {
         width: 100%;
@@ -74,13 +56,14 @@
         border: none;
         border-radius: 8px;
     }
-    /* Update CSS Tombol Mini agar bisa berjejer */
+    
+    /* Tombol Aksi Mini (Edit/Delete) */
     .action-buttons {
         position: absolute;
         top: 10px;
         right: 10px;
         display: flex;
-        gap: 5px; /* Jarak antar tombol */
+        gap: 5px;
         z-index: 10;
     }
 
@@ -99,6 +82,21 @@
     
     .btn-edit:hover { background: #36b9cc; color: white !important; }
     .btn-delete:hover { background: #e74a3b; color: white !important; }
+
+    /* Badge Kelas (Baru) */
+    .badge-audiens {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 700;
+        z-index: 9;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .badge-umum { background: #eef2ff; color: #4e73df; border: 1px solid #c7d2fe; }
+    .badge-kelas { background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; }
 </style>
 
 <div class="container-fluid">
@@ -122,29 +120,41 @@
             </nav>
         </div>
         <div class="col-md-6 text-end">
-            <a href="{{ route('dashboard') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Kembali
+            {{-- Logic Tombol Kembali Berdasarkan Role --}}
+            <a href="{{ route('dashboard') }}" class="btn btn-secondary btn-sm shadow-sm">
+                <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
             </a>
         </div>
 
     </div>
-    <div class="d-flex w-100 justify-content-end mb-3">
+
+    {{-- Tombol Tambah --}}
+    <div class="d-flex w-100 justify-content-between mb-3 align-items-center">
+        <div>
+            @if(Auth::user()->role == 'guru')
+                <span class="badge bg-info text-white p-2">
+                    <i class="fas fa-user-tie me-1"></i> Mode Guru
+                </span>
+            @endif
+        </div>
         <a href="{{ route('lms-items.create', ['parent_id' => $currentFolder ? $currentFolder->id : '']) }}" class="btn btn-primary shadow-sm">
-            <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Item
+            <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Materi Baru
         </a>
     </div>
         
 
     {{-- CONTAINER PUTIH UTAMA --}}
     <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-white">
+        <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">
                 {{ $currentFolder ? 'Isi Folder: ' . $currentFolder->title : 'File Manager (Root)' }}
             </h6>
+            @if(Auth::user()->role == 'guru')
+                <small class="text-muted">Menampilkan materi Umum & Kelas Ajar Anda.</small>
+            @endif
         </div>
         <div class="card-body">
             
-            {{-- GRID SYSTEM --}}
             <div class="row">
                 
                 {{-- TOMBOL KEMBALI (Jika di dalam folder) --}}
@@ -164,36 +174,38 @@
                     <div class="col-xl-3 col-md-4 col-sm-6 mb-4">
                         <div class="card lms-card shadow-sm h-100">
                             
-                            {{-- TOMBOL DELETE (Pojok Kanan Atas) --}}
-                            <div class="action-buttons">
-                                    
-                                    {{-- 1. Tombol Edit --}}
-                                    <a href="{{ route('lms-items.edit', $item->id) }}" class="btn-mini btn-edit text-info" title="Edit">
-                                        <i class="fas fa-pen fa-xs"></i>
-                                    </a>
-
-                                    {{-- 2. Tombol Delete --}}
-                                    <form action="{{ route('lms-items.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus item ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn-mini btn-delete text-danger" title="Hapus" style="border:none;">
-                                            <i class="fas fa-trash-alt fa-xs"></i>
-                                        </button>
-                                    </form>
-
+                            {{-- BADGE AUDIENS (BARU) --}}
+                            @if($item->kelas)
+                                <div class="badge-audiens badge-kelas" title="Hanya untuk siswa kelas ini">
+                                    <i class="fas fa-lock me-1"></i> {{ $item->kelas->nama_kelas }}
                                 </div>
-                            {{-- LOGIC KLIK: JIKA FOLDER -> BUKA LINK, JIKA FILE -> BUKA MODAL --}}
-                            
+                            @else
+                                <div class="badge-audiens badge-umum" title="Dapat dilihat semua siswa">
+                                    <i class="fas fa-globe me-1"></i> Umum
+                                </div>
+                            @endif
+
+                            {{-- ACTION BUTTONS --}}
+                            <div class="action-buttons">
+                                <a href="{{ route('lms-items.edit', $item->id) }}" class="btn-mini btn-edit text-info" title="Edit">
+                                    <i class="fas fa-pen fa-xs"></i>
+                                </a>
+                                <form action="{{ route('lms-items.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus item ini?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn-mini btn-delete text-danger" title="Hapus" style="border:none;">
+                                        <i class="fas fa-trash-alt fa-xs"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            {{-- CONTENT CLICKABLE --}}
                             @if($item->type == 'folder')
-                                {{-- TYPE: FOLDER (Navigasi Biasa) --}}
                                 <a href="{{ route('lms-items.index', ['parent_id' => $item->id]) }}" class="clickable-area">
                                     <i class="fas fa-folder lms-icon icon-folder"></i>
                                     <h6 class="font-weight-bold text-dark mb-0">{{ Str::limit($item->title, 20) }}</h6>
                                     <small class="text-muted">{{ $item->children()->count() }} items</small>
                                 </a>
-
                             @else
-                                {{-- TYPE: FILE/VIDEO (Buka Modal Preview) --}}
                                 <div class="clickable-area" 
                                      onclick="openPreview('{{ $item->title }}', '{{ $item->type }}', '{{ $item->type == 'file' ? asset($item->content) : $item->content }}')">
                                     
@@ -215,8 +227,8 @@
                 @empty
                     @if(!$currentFolder)
                         <div class="col-12 text-center py-5 text-muted">
-                            <i class="fas fa-folder-open fa-3x mb-3"></i>
-                            <p>Belum ada folder atau materi. Silakan tambah baru.</p>
+                            <i class="fas fa-folder-open fa-3x mb-3 text-gray-300"></i>
+                            <p>Belum ada materi. Klik tombol <strong>Tambah</strong> di atas.</p>
                         </div>
                     @endif
                 @endforelse
@@ -226,7 +238,7 @@
     </div>
 </div>
 
-{{-- MODAL PREVIEW (Bootstrap Modal) --}}
+{{-- MODAL PREVIEW (Tetap Sama) --}}
 <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -237,10 +249,7 @@
                 </button>
             </div>
             <div class="modal-body p-0 modal-preview-content">
-                {{-- IFRAME akan dimuat di sini lewat JS --}}
                 <iframe id="previewIframe" class="preview-frame" src="" allowfullscreen></iframe>
-                
-                {{-- Pesan fallback jika link --}}
                 <div id="linkFallback" class="text-center p-5 d-none">
                     <i class="fas fa-external-link-alt fa-3x text-primary mb-3"></i>
                     <h4>Ini adalah Tautan Eksternal</h4>
@@ -252,41 +261,25 @@
     </div>
 </div>
 
-{{-- JAVASCRIPT UNTUK MODAL --}}
 <script>
     function openPreview(title, type, contentUrl) {
-        // 1. Set Judul Modal
         document.getElementById('previewTitle').innerText = title;
-        
         var iframe = document.getElementById('previewIframe');
         var fallback = document.getElementById('linkFallback');
         var linkBtn = document.getElementById('externalLinkBtn');
 
-        // 2. Reset Tampilan
         iframe.classList.remove('d-none');
         fallback.classList.add('d-none');
-        iframe.src = ''; // Clear dulu biar loading kelihatan
+        iframe.src = ''; 
 
-        // 3. Logic Berdasarkan Tipe
         if(type === 'link') {
-            // Kalau link eksternal, kadang tidak bisa di-iframe (security headers)
-            // Jadi kita kasih opsi buka tab baru, TAPI kita coba load dulu
             iframe.src = contentUrl;
-            
-            // Opsional: Langsung tampilkan tombol buka tab baru buat jaga-jaga
-            // fallback.classList.remove('d-none');
-            // iframe.classList.add('d-none');
-            // linkBtn.href = contentUrl;
         } else {
-            // Untuk PDF dan Youtube Embed
             iframe.src = contentUrl;
         }
-
-        // 4. Tampilkan Modal (Menggunakan jQuery Bootstrap bawaan template admin biasanya)
         $('#previewModal').modal('show');
     }
 
-    // Bersihkan iframe saat modal ditutup agar video youtube berhenti main
     $('#previewModal').on('hidden.bs.modal', function () {
         document.getElementById('previewIframe').src = '';
     });

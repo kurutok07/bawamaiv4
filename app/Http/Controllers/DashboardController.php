@@ -21,6 +21,9 @@ class DashboardController extends Controller
         elseif ($role == 'siswa') {
             return redirect()->route("landing");
         } 
+        elseif ($role == 'kepala_sekolah') {
+            return view('dashboard.kepala_sekolah');
+        }
         else {
             // Fallback jika role tidak dikenali
             return abort(403, 'Role tidak dikenali');

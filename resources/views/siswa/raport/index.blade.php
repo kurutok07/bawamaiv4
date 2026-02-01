@@ -14,7 +14,7 @@
     
         <div class="row">
             
-            @foreach($riwayatKelas as $kelas)
+@foreach($riwayatKelas as $kelas)
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-header bg-primary text-white">
@@ -27,27 +27,35 @@
                             </p>
                             <hr>
                             
-                            {{-- LOGIC TOMBOL BARU --}}
+                            {{-- LOGIC PENGAMBILAN DATA YANG DIPERBAIKI --}}
+                            @php
+                                // Ambil ID Tahun Ajaran dari Pivot Table (Riwayat)
+                                $taId = $kelas->pivot->tahun_ajaran_id;
+                                $kelasId = $kelas->id;
+
+                                // Cek URL di array 3 dimensi: [kelas][tahun][jenis]
+                                $urlGanjil = $fileMap[$kelasId][$taId]['ganjil'] ?? null;
+                                $urlGenap  = $fileMap[$kelasId][$taId]['genap'] ?? null;
+                            @endphp
+
                             <div class="d-grid gap-2">
                                 
-                                {{-- CEK FILE GANJIL --}}
-                                @php
-                                    $urlGanjil = $fileMap[$kelas->id]['ganjil'] ?? null;
-                                @endphp
+                                {{-- TOMBOL GANJIL --}}
                                 <button type="button" 
                                         onclick="checkRaport('{{ $urlGanjil }}', 'Semester Ganjil')" 
-                                        class="btn btn-outline-primary w-100">
+                                        class="btn {{ $urlGanjil ? 'btn-outline-primary' : 'btn-outline-secondary' }} w-100"
+                                        {{-- Opsional: Disable kalau tidak ada file biar user paham --}}
+                                        {{-- {{ !$urlGanjil ? 'disabled' : '' }} --}}>
                                     <i class="fas fa-file-alt"></i> Raport Semester Ganjil
+                                    @if(!$urlGanjil) <small class="d-block" style="font-size: 0.7rem">(Belum ada)</small> @endif
                                 </button>
 
-                                {{-- CEK FILE GENAP --}}
-                                @php
-                                    $urlGenap = $fileMap[$kelas->id]['genap'] ?? null;
-                                @endphp
+                                {{-- TOMBOL GENAP --}}
                                 <button type="button" 
                                         onclick="checkRaport('{{ $urlGenap }}', 'Semester Genap')"
-                                        class="btn btn-outline-success w-100">
+                                        class="btn {{ $urlGenap ? 'btn-outline-success' : 'btn-outline-secondary' }} w-100">
                                     <i class="fas fa-file-alt"></i> Raport Semester Genap
+                                    @if(!$urlGenap) <small class="d-block" style="font-size: 0.7rem">(Belum ada)</small> @endif
                                 </button>
 
                             </div>

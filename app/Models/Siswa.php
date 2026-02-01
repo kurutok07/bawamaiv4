@@ -15,8 +15,8 @@ class Siswa extends Model
 
     protected $fillable = [
         'user_id',        // <--- INI WAJIB ADA AGAR BISA DISIMPAN
-        'nis',
         'nisn',
+        'nik',
         'nama_lengkap',
         'jenis_kelamin',
         'tempat_lahir',
@@ -28,11 +28,12 @@ class Siswa extends Model
         'kelas_id',        
         'tahun_ajaran_id', // <--- Tambahkan ini
     ];
-    public function kelas()
+public function kelas()
     {
-        return $this->belongsTo(Kelas::class, 'kelas_id');
+        return $this->belongsToMany(Kelas::class, 'kelas_siswa', 'siswa_id', 'kelas_id')
+                    ->withPivot('tahun_ajaran_id') // Agar bisa akses/filter tahun ajaran
+                    ->withTimestamps();
     }
-
     // Helper: Ambil Kelas Aktif (Berdasarkan Tahun Ajaran yg sedang aktif)
     // Asumsi: Kamu punya cara menentukan active TA, misal via Session atau Database
     public function getKelasAktifAttribute()
@@ -57,4 +58,6 @@ public function kelasDiTahun($tahunId)
     return $this->belongsToMany(Kelas::class, 'kelas_siswa')
                 ->wherePivot('tahun_ajaran_id', $tahunId);
 }
+
+
 }
