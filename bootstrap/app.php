@@ -11,11 +11,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-    $middleware->alias([
-        'role' => \App\Http\Middleware\CheckRole::class,
-    ]);
-})
+        
+        // 1. Alias (Untuk middleware yang dipanggil spesifik di route, misal: 'role:admin')
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
+
+
+        // 2. Global Middleware (Jalan di SEMUA request/halaman)
+        // Kita taruh CheckMaintenanceMode di sini agar website bisa dikunci total saat maintenance
+$middleware->web(append: [
+            \App\Http\Middleware\CheckMaintenanceMode::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
-    

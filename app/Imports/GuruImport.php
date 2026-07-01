@@ -36,28 +36,39 @@ class GuruImport implements ToModel, WithHeadingRow
 
     public function model(array $row)
     {
-        // 1. Validasi Dasar
-        if (!isset($row['nuptk']) || $row['nuptk'] == null) {
-            return null;
+        // 1. Validasi Dasar (Cek NIY wajib ada)
+        // Pastikan di Excel headernya bernama 'niy' atau 'nuptk' (sesuaikan)
+        // Disini saya asumsikan header di excel tetap 'nuptk' tapi isinya NIY, 
+        // ATAU Anda bisa ubah header excel jadi 'niy'.
+        
+        // Agar aman, kita cek key 'niy' dulu, kalau gak ada coba 'nuptk'
+        $niyValue = $row['niy'] ?? $row['nuptk'] ?? null; 
+
+        if (!$niyValue) {
+            return null; // Skip baris ini jika tidak ada ID unik
         }
 
-        // 2. Logic User (Login)
+        // 2. Logic User (Login pakai NIY)
         $user = User::firstOrCreate(
-            ['username' => $row['nuptk']], 
+            ['username' => $niyValue], 
             [
                 'name'      => $row['nama_lengkap'],
-                'email'     => $row['email'] ?? $row['nuptk'].'@bawamai.sch.id',
-                'password'  => Hash::make($row['nuptk']),
+                'email'     => $row['email'] ?? $niyValue.'@guru.bawamai.sch.id',
+                'password'  => Hash::make($niyValue), // Password default = NIY
                 'role'      => 'guru',
             ]
         );
 
         // 3. Logic Simpan Guru
         $guru = Guru::updateOrCreate(
-            ['nuptk' => $row['nuptk']], 
+            ['niy' => $niyValue], // Kunci update sekarang NIY
             [
                 'user_id'             => $user->id,
-                'nip'                 => $row['nip'] ?? null,
+                
+                // Mapping Kolom Baru
+                'nuptk'               => $row['nuptk'] ?? $row['nuptk_lama'] ?? null, // NIP lama jadi NUPTK
+                // 'nip'              => null, // Kolom NIP di DB sudah tidak dipakai/null
+                
                 'nama_lengkap'        => $row['nama_lengkap'],
                 'gelar_depan'         => $row['gelar_depan'] ?? null,
                 'gelar_belakang'      => $row['gelar_belakang'] ?? null,

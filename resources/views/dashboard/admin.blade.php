@@ -237,7 +237,12 @@
         .admin-card:nth-child(10) { border-top-color: #d4af37; }
         .admin-card:nth-child(10) .icon-wrapper { background: linear-gradient(135deg, #fbc02d, #8d6e63); }
 
-
+        .admin-card:nth-child(11) { border-top-color: #424242; } /* Dark Grey */
+        .admin-card:nth-child(11) .icon-wrapper { background: linear-gradient(135deg, #616161, #212121); }
+        /* 12. Akun Lainnya (Indigo) */
+.admin-card:nth-child(12) { border-top-color: #3f51b5; }
+.admin-card:nth-child(12) .icon-wrapper { background: linear-gradient(135deg, #7986cb, #283593); }
+        
         /* --- FOOTER --- */
         .main-footer {
             background: white;
@@ -368,13 +373,25 @@
                     <h3>Kinerja Guru</h3>
                 </a>
 
-                {{-- 10. AKUN YAYASAN (FITUR BARU) --}}
+                {{-- 10. AKUN YAYASAN (FITUR BARU) 
                 <a href="{{ route('admin.kepala-sekolah.index') }}" class="admin-card">
                     <div class="icon-wrapper">
                         <i class="fas fa-user-tie"></i>
                     </div>
                     <h3>Akun Yayasan</h3>
+                </a>--}}
+                {{-- 12. AKUN LAINNYA (FITUR BARU: UKS & PERPUS) --}}
+                <a href="{{ route('accounts.index') }}" class="admin-card">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <h3>Akun Lainnya</h3>
                 </a>
+                <a href="{{ route('settings.index') }}" class="admin-card">
+                    <div class="icon-wrapper"><i class="fas fa-cogs"></i></div>
+                    <h3>Pengaturan</h3>
+                </a>
+
                 
             </div>
         </div>

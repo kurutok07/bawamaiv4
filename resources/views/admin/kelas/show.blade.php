@@ -8,7 +8,7 @@
         <p class="text-muted">
             Wali Kelas: {{ $kelas->waliKelas->nama_lengkap ?? '-' }} | 
             <span class="badge bg-warning text-dark">
-                Tahun Ajaran: {{ $activeTa->tahun_ajaran }} - {{ $activeTa->semester }}
+                Tahun Ajaran: {{ $activeTa->tahun}}
             </span>
         </p>
     </div>
@@ -228,7 +228,7 @@
                         <button class="btn btn-outline-success btn-sm" type="submit">Upload</button>
                     </div>
                     <div class="text-center">
-                        <a href="{{asset('templates/template_data_kelas.xlsx')}}" download class="small text-decoration-underline text-success">Download Template</a>
+                        <a href="https://bawamai.restetion.com/templates/template_data_kelas.xlsx" download class="small text-decoration-underline text-success">Download Template</a>
                     </div>
                 </form>
             </div>

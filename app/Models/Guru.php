@@ -15,7 +15,7 @@ class Guru extends Model
 protected $fillable = [
     // Identitas
     'user_id', 
-    'nip', 
+    'niy', 
     'nuptk',            
     'nama_lengkap', 
     'gelar_depan', 
@@ -46,18 +46,22 @@ protected $fillable = [
     }
 
     // Relasi ke Kelas (Wali Kelas)
-    public function kelas()
+public function kelas()
     {
-        return $this->hasOne(Kelas::class, 'wali_kelas_id');
-    }
-    // Relasi ke Kelas yang Diajar (Many-to-Many)
+        // 1. Ambil ID Tahun Ajaran Aktif
+        $activeTa = TahunAjaran::where('is_active', 1)->first();
+        $activeTaId = $activeTa ? $activeTa->id : null;
+
+        // 2. Return relasi HANYA JIKA tahun ajarannya cocok
+        return $this->hasOne(Kelas::class, 'wali_kelas_id')
+                    ->where('tahun_ajaran_id', $activeTaId);
+    }    // Relasi ke Kelas yang Diajar (Many-to-Many)
 public function kelasAjar()
-{
-    return $this->belongsToMany(Kelas::class, 'guru_kelas', 'guru_id', 'kelas_id')
-                ->withPivot('tahun_ajaran_id')
-                ->withTimestamps();
-}
-public function lmsItems()
+    {
+        return $this->belongsToMany(Kelas::class, 'guru_kelas', 'guru_id', 'kelas_id')
+                    ->withPivot('tahun_ajaran_id')
+                    ->withTimestamps();
+    }public function lmsItems()
 {
     return $this->hasMany(LmsItem::class, 'guru_id');
 }

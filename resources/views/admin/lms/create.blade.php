@@ -37,9 +37,10 @@
                 <div class="form-group mb-4 p-3 bg-light border rounded">
                     <label class="font-weight-bold text-dark small"><i class="fas fa-users me-1"></i> Target Audiens (Siapa yang bisa melihat?)</label>
                     <select name="kelas_id" class="form-control">
-                        <option value="">Semua Siswa (Publik / Umum)</option>
-                        
-                        @foreach($daftarKelas as $k)
+                    @if(Auth::user()->role == 'admin' || Auth::user()->role == 'perpus' || Auth::user()->role == 'admin_qurana')
+	                        <option value="">Semua Siswa (Publik / Umum)</option>   
+       			@endif
+	                @foreach($daftarKelas as $k)
                             <option value="{{ $k->id }}">Khusus Kelas: {{ $k->nama_kelas }}</option>
                         @endforeach
                     </select>

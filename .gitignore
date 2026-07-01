@@ -22,3 +22,8 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/public/assets/pdf/*
+/public/assets/uploads/*
+/public/uploads/*
+/bawamaiv4
+/revisi.txt

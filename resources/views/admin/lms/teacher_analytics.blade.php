@@ -77,13 +77,20 @@
                                 @if($activity->type == 'upload')
                                     <div class="activity-dot bg-upload"></div>
                                     <p class="mb-1 text-gray-800">
-                                        <strong>{{ $activity->nama_lengkap }}</strong> mengupload materi baru:
+                                        {{-- Menampilkan Nama dengan Gelar jika ada --}}
+                                        <strong>
+                                            {{ trim(($activity->gelar_depan ?? '') . ' ' . $activity->nama_lengkap . ' ' . ($activity->gelar_belakang ?? '')) }}
+                                        </strong> 
+                                        mengupload materi baru:
                                         <span class="text-primary font-italic">"{{ Str::limit($activity->item_title, 40) }}"</span>
                                     </p>
                                 @else
                                     <div class="activity-dot bg-login"></div>
                                     <p class="mb-1 text-gray-800">
-                                        <strong>{{ $activity->nama_lengkap }}</strong> masuk ke dalam sistem (Login).
+                                        <strong>
+                                            {{ trim(($activity->gelar_depan ?? '') . ' ' . $activity->nama_lengkap . ' ' . ($activity->gelar_belakang ?? '')) }}
+                                        </strong> 
+                                        masuk ke dalam sistem (Login).
                                     </p>
                                 @endif
                                 <small class="text-muted"><i class="far fa-clock mr-1"></i> {{ \Carbon\Carbon::parse($activity->created_at)->diffForHumans() }}</small>
@@ -111,21 +118,29 @@
                 <div class="card-body p-0" style="max-height: 700px; overflow-y: auto;">
                     <div class="list-group list-group-flush" id="guruList">
                         @foreach($gurus as $guru)
+                        
+                        {{-- UPDATE: Logic Foto Profil --}}
+                        @php
+                            $imgSrc = $guru->foto ? asset('storage/' . $guru->foto) : null;
+                            // Format Nama Lengkap Formal
+                            $namaFormal = trim(($guru->gelar_depan ?? '') . ' ' . $guru->nama_lengkap . ' ' . ($guru->gelar_belakang ?? ''));
+                        @endphp
+
                         <div class="list-group-item guru-list-item p-3" 
                              data-name="{{ strtolower($guru->nama_lengkap) }}"
                              onclick="showTeacherDetail({{ $guru->id }})">
                             <div class="d-flex align-items-center">
                                 <div class="avatar-circle mr-3">
-                                    {{-- Foto Kecil di List --}}
-                                    @if($guru->foto)
-                                        <img src="{{ asset($guru->foto) }}">
+                                    @if($imgSrc)
+                                        <img src="{{ $imgSrc }}" alt="Foto">
                                     @else
                                         {{ substr($guru->nama_lengkap, 0, 1) }}
                                     @endif
                                 </div>
                                 <div class="flex-grow-1">
-                                    <h6 class="font-weight-bold text-dark mb-0">{{ Str::limit($guru->nama_lengkap, 20) }}</h6>
-                                    <small class="text-muted">{{ $guru->nip ?? 'NIP: -' }}</small>
+                                    <h6 class="font-weight-bold text-dark mb-0">{{ Str::limit($namaFormal, 25) }}</h6>
+                                    {{-- UPDATE: Menampilkan NIY --}}
+                                    <small class="text-muted">{{ $guru->niy ? 'NIY: '.$guru->niy : 'NIY: -' }}</small>
                                 </div>
                                 <div class="text-right">
                                     <div class="badge {{ $guru->total_materi > 0 ? 'badge-success' : 'badge-secondary' }} badge-pill mb-1">
@@ -156,16 +171,19 @@
                         
                         {{-- WADAH FOTO PROFIL --}}
                         <div id="teacherProfileContainer" class="mb-3 d-flex justify-content-center align-items-center" style="height: 100px;">
-                            {{-- Default Loading Spinner --}}
                             <div class="spinner-border text-white" role="status"></div>
                         </div>
 
                         <h5 class="font-weight-bold mb-1" id="modalName">Nama Guru</h5>
-                        <p class="mb-3 small text-white-50" id="modalNip">NIP: 123456</p>
                         
-                        <div class="text-left mt-4 px-3">
-                            <div class="mb-2 small"><i class="fas fa-envelope mr-2"></i> <span id="modalEmail">-</span></div>
-                            <div class="mb-2 small"><i class="fas fa-phone mr-2"></i> <span id="modalPhone">-</span></div>
+                        {{-- UPDATE: Ganti ID jadi modalNiy --}}
+                        <p class="mb-2 small text-white-50" id="modalNiy">NIY: -</p>
+                        <span class="badge badge-light text-success mb-3 px-2" id="modalStatus">-</span>
+
+                        <div class="text-left mt-3 px-3">
+                            <div class="mb-2 small"><i class="fas fa-envelope mr-2" style="width:20px"></i> <span id="modalEmail">-</span></div>
+                            {{-- UPDATE: ID jadi modalHp --}}
+                            <div class="mb-2 small"><i class="fas fa-phone mr-2" style="width:20px"></i> <span id="modalHp">-</span></div>
                         </div>
 
                         <div class="row mt-4 pt-3 border-top border-white-50 mx-2">
@@ -270,15 +288,16 @@
       }
     });
 
-    // --- 3. LOGIC MODAL DETAIL GURU (FIXED FOTO) ---
+    // --- 3. LOGIC MODAL DETAIL GURU (UPDATED FIELDS) ---
     function showTeacherDetail(id) {
         // RESET TAMPILAN
         $('#guruDetailModal').modal('show');
         $('#modalName').text('Loading...');
+        $('#modalNiy').text('...');
+        $('#modalStatus').text('...');
         
-        // Reset Wadah Foto ke Loading Spinner
+        // Reset Wadah Foto
         $('#teacherProfileContainer').html('<div class="spinner-border text-white" role="status"></div>');
-        
         $('#uploadList').html('<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>');
         $('#loginList').html('');
 
@@ -286,27 +305,38 @@
         $.ajax({
             url: '/admin/analytics/teacher-detail/' + id,
             success: function(res) {
-                // Populate Biodata Teks
-                $('#modalName').text(res.guru.nama_lengkap);
-                $('#modalNip').text(res.guru.nip ? 'NIP: ' + res.guru.nip : 'NIP: -');
-                $('#modalEmail').text(res.email);
-                $('#modalPhone').text(res.guru.no_telepon ? res.guru.no_telepon : '-');
+                // Populate Biodata (Disesuaikan dengan Model Baru)
+                
+                // Gabungkan gelar dan nama
+                let gd = res.guru.gelar_depan ? res.guru.gelar_depan + ' ' : '';
+                let gb = res.guru.gelar_belakang ? ' ' + res.guru.gelar_belakang : '';
+                $('#modalName').text(gd + res.guru.nama_lengkap + gb);
+                
+                // Tampilkan NIY
+                $('#modalNiy').text(res.guru.niy ? 'NIY: ' + res.guru.niy : 'NIY: -');
+                
+                // Tampilkan Status Kepegawaian
+                $('#modalStatus').text(res.guru.status_kepegawaian ? res.guru.status_kepegawaian : 'Guru');
+
+                // Email & HP
+                $('#modalEmail').text(res.guru.email ? res.guru.email : '-'); // Menggunakan email dari tabel guru
+                $('#modalHp').text(res.guru.no_hp ? res.guru.no_hp : '-'); // UPDATE: no_telepon -> no_hp
+
+                // Stats
                 $('#statUpload').text(res.stats.total_upload);
                 $('#statLogin').text(res.stats.total_login);
 
-                // --- LOGIC FOTO PROFIL (INJECT HTML) ---
+                // --- LOGIC FOTO PROFIL ---
                 let profileHtml = '';
                 if (res.guru.foto) {
-                    // Ada Foto -> Pakai tag IMG
-                    profileHtml = `<img src="/${res.guru.foto}" class="rounded-circle shadow border border-white" style="width: 100px; height: 100px; object-fit: cover;">`;
+                    profileHtml = `<img src="/storage/${res.guru.foto}" class="rounded-circle shadow border border-white" style="width: 100px; height: 100px; object-fit: cover;">`;
                 } else {
-                    // Tidak Ada Foto -> Pakai tag DIV Avatar Inisial
                     let initial = res.guru.nama_lengkap.charAt(0).toUpperCase();
                     profileHtml = `<div class="avatar-circle-lg mb-3">${initial}</div>`;
                 }
                 $('#teacherProfileContainer').html(profileHtml);
 
-                // Populate Upload List
+                // Populate Upload List (Sama seperti sebelumnya)
                 let uploadHtml = '';
                 if(res.uploads.length === 0) {
                     uploadHtml = '<div class="text-center text-muted py-4"><i class="fas fa-folder-open mb-2"></i><br>Belum ada materi diupload.</div>';

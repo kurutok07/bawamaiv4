@@ -25,9 +25,9 @@ public function collection(Collection $rows)
         if(!$kelas) return;
 
         foreach ($rows as $row) {
-            if (!isset($row['nis'])) continue;
+            if (!isset($row['nisn'])) continue;
 
-            $siswa = Siswa::where('nis', $row['nis'])->first();
+            $siswa = Siswa::where('nisn', $row['nisn'])->first();
 
             if ($siswa) {
                 // PERBAIKAN: Ganti allSiswas() jadi siswas()

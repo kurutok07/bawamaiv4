@@ -1,63 +1,64 @@
-@extends('layouts.admin') 
+@extends('layouts.admin')
+
+@section('title', 'Arsip Raport')
 
 @section('content')
 <div class="container py-4">
-    <h3 class="mb-4 font-weight-bold">Arsip Raport Saya</h3>
-    <div class="col-md-6 mb-3">
-                <a href="{{ route('landing') }}" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-arrow-left"></i> Kembali
-                </a>
-            </div>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h3 class="font-weight-bold mb-0 text-gray-800">Arsip Raport Saya</h3>
+            <p class="text-muted small mb-0">Pilih kelas untuk melihat dokumen raport.</p>
+        </div>
+        <a href="{{ route('landing') }}" class="btn btn-secondary btn-sm shadow-sm rounded-pill px-3">
+            <i class="fas fa-arrow-left mr-1"></i> Kembali
+        </a>
+    </div>
+
     @if($riwayatKelas->isEmpty())
-        <div class="alert alert-info">Belum ada riwayat kelas.</div>
+        <div class="text-center py-5">
+            <img src="{{ asset('img/empty_data.svg') }}" style="width: 200px; opacity: 0.6;" class="mb-4">
+            <h5 class="text-gray-600">Belum Ada Riwayat Kelas</h5>
+            <p class="text-muted">Anda belum terdaftar dalam kelas manapun pada sistem ini.</p>
+        </div>
     @else
-    
+
         <div class="row">
-            
-@foreach($riwayatKelas as $kelas)
+            @foreach($riwayatKelas as $kelas)
                 <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">{{ $kelas->nama_kelas }}</h5>
-                            <small>Tahun Ajaran: {{ $listTahun[$kelas->pivot->tahun_ajaran_id] ?? '-' }}</small>
+                    <div class="card shadow-sm border-0 h-100 folder-card">
+                        {{-- Header Card (Warna-warni sesuai ID agar tidak monoton) --}}
+                        @php
+                            $colors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger'];
+                            $bgClass = $colors[$loop->index % 5];
+                        @endphp
+                        
+                        <div class="card-header {{ $bgClass }} text-white py-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-0 font-weight-bold">{{ $kelas->nama_kelas }}</h5>
+                                <small class="opacity-75">{{ $kelas->tahunAjaran->tahun ?? 'Tahun Ajaran -' }}</small>
+                            </div>
+                            <i class="fas fa-folder-open fa-2x opacity-50"></i>
                         </div>
-                        <div class="card-body">
-                            <p class="text-muted">
-                                Wali Kelas: {{ $kelas->waliKelas->nama_lengkap ?? 'Belum ditentukan' }}
-                            </p>
-                            <hr>
+                        
+                        {{-- Body Card --}}
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-3">
+                                <small class="text-uppercase text-muted font-weight-bold" style="font-size: 0.7rem;">Wali Kelas</small>
+                                <div class="d-flex align-items-center mt-1">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mr-2" style="width: 35px; height: 35px;">
+                                        <i class="fas fa-user-tie text-secondary"></i>
+                                    </div>
+                                    <span class="font-weight-bold text-dark small">
+                                        {{ $kelas->waliKelas->nama_lengkap ?? 'Belum ditentukan' }}
+                                    </span>
+                                </div>
+                            </div>
                             
-                            {{-- LOGIC PENGAMBILAN DATA YANG DIPERBAIKI --}}
-                            @php
-                                // Ambil ID Tahun Ajaran dari Pivot Table (Riwayat)
-                                $taId = $kelas->pivot->tahun_ajaran_id;
-                                $kelasId = $kelas->id;
-
-                                // Cek URL di array 3 dimensi: [kelas][tahun][jenis]
-                                $urlGanjil = $fileMap[$kelasId][$taId]['ganjil'] ?? null;
-                                $urlGenap  = $fileMap[$kelasId][$taId]['genap'] ?? null;
-                            @endphp
-
-                            <div class="d-grid gap-2">
-                                
-                                {{-- TOMBOL GANJIL --}}
-                                <button type="button" 
-                                        onclick="checkRaport('{{ $urlGanjil }}', 'Semester Ganjil')" 
-                                        class="btn {{ $urlGanjil ? 'btn-outline-primary' : 'btn-outline-secondary' }} w-100"
-                                        {{-- Opsional: Disable kalau tidak ada file biar user paham --}}
-                                        {{-- {{ !$urlGanjil ? 'disabled' : '' }} --}}>
-                                    <i class="fas fa-file-alt"></i> Raport Semester Ganjil
-                                    @if(!$urlGanjil) <small class="d-block" style="font-size: 0.7rem">(Belum ada)</small> @endif
-                                </button>
-
-                                {{-- TOMBOL GENAP --}}
-                                <button type="button" 
-                                        onclick="checkRaport('{{ $urlGenap }}', 'Semester Genap')"
-                                        class="btn {{ $urlGenap ? 'btn-outline-success' : 'btn-outline-secondary' }} w-100">
-                                    <i class="fas fa-file-alt"></i> Raport Semester Genap
-                                    @if(!$urlGenap) <small class="d-block" style="font-size: 0.7rem">(Belum ada)</small> @endif
-                                </button>
-
+                            <div class="mt-auto">
+                                <a href="{{ route('siswa.raport.show', ['kelas_id' => $kelas->id]) }}" 
+                                   class="btn btn-outline-dark btn-block rounded-pill btn-sm font-weight-bold">
+                                    <i class="fas fa-eye mr-1"></i> Buka Arsip
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -67,73 +68,13 @@
     @endif
 </div>
 
-<div class="modal fade" id="pdfModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl" style="max-width: 90%; height: 90%;">
-        <div class="modal-content h-100">
-            <div class="modal-header">
-                <h5 class="modal-title" id="pdfModalTitle">Preview Raport</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body p-0">
-                <iframe id="pdfIframe" src="" width="100%" height="100%" style="border:none;"></iframe>
-            </div>
-            <div class="modal-footer">
-                <a href="#" id="downloadBtn" class="btn btn-primary" download target="_blank">
-                    <i class="fas fa-download"></i> Download PDF
-                </a>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-exclamation-circle"></i> Maaf</h5>
-                
-                {{-- PERHATIKAN: Ganti 'data-bs-dismiss' jadi 'data-dismiss' --}}
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-
-            <div class="modal-body text-center py-4">
-                <h4>Raport Belum Rilis</h4>
-                <p class="text-muted mb-0">
-                    Raport untuk <span id="errorSemester" class="fw-bold"></span> belum diunggah.
-                </p>
-            </div>
-
-            <div class="modal-footer">
-                {{-- PERHATIKAN: Ganti 'data-bs-dismiss' jadi 'data-dismiss' --}}
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Mengerti</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- SCRIPT JAVASCRIPT --}}
-<script>
-    function checkRaport(url, semesterName) {
-        // Jika URL kosong (null/undefined dari PHP), berarti file belum ada
-        if (!url) {
-            // Tampilkan Modal Error
-            document.getElementById('errorSemester').innerText = semesterName;
-            var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-            errorModal.show();
-        } else {
-            // Jika URL ada, Tampilkan Modal Preview
-            document.getElementById('pdfModalTitle').innerText = 'Preview Raport - ' + semesterName;
-            document.getElementById('pdfIframe').src = url;
-            document.getElementById('downloadBtn').href = url;
-            
-            var pdfModal = new bootstrap.Modal(document.getElementById('pdfModal'));
-            pdfModal.show();
-        }
+<style>
+    .folder-card {
+        transition: transform 0.2s;
     }
-</script>
+    .folder-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+</style>
 @endsection

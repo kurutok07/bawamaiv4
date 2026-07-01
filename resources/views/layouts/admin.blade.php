@@ -25,6 +25,50 @@
             padding: 0;
             box-sizing: border-box;
         }
+.modal-header .close, 
+        button.close {
+            /* 1. Hapus Background & Border */
+            background-color: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            
+            /* 2. Hapus Efek 3D / Bayangan */
+            text-shadow: none !important;
+            
+            /* 3. Atur Warna Jadi Hitam (Menimpa text-white) */
+            color: #333333 !important; /* Hitam dark grey biar elegan */
+            
+            /* 4. Atur Opacity (Transparansi) */
+            opacity: 0.6 !important; /* Agak transparan saat diam */
+            
+            /* 5. Atur Ukuran & Posisi */
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+            padding: 1rem !important;
+            margin: -1rem -1rem -1rem auto !important; /* Standar Bootstrap biar mojok kanan */
+        }
+
+        /* Khusus untuk menimpa class 'text-white' jika ada di HTML */
+        button.close.text-white {
+            color: #333333 !important;
+        }
+
+        /* 6. Efek Hover (Saat mouse diarahkan) */
+        .modal-header .close:hover,
+        button.close:hover {
+            color: #000000 !important; /* Jadi Hitam Pekat */
+            opacity: 1 !important;     /* Jadi Jelas (Tidak transparan) */
+            background-color: transparent !important; /* Pastikan background tetap transparan */
+            text-decoration: none !important;
+        }
+
+        /* Hapus outline saat diklik */
+        .modal-header .close:focus,
+        button.close:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
 
         body {
             font-family: 'Nunito', sans-serif;
@@ -289,9 +333,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
 
-    <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
-        <script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-        
-        @yield('scripts')
+ 	@stack('scripts')
+	@yield('scripts')       
         </body>
     </html>

@@ -76,6 +76,53 @@ class ProfileController extends Controller
         return back()->with('error', 'Data profil tidak ditemukan.');
     }
 
+    // --- FITUR BARU: UPDATE PORTOFOLIO GURU ---
+    public function updatePortofolio(Request $request)
+    {
+        // 1. Validasi: Harus PDF dan max ukuran misalnya 5MB (5120 KB)
+        $request->validate([
+            'portofolio' => 'required|mimes:pdf|max:5120',
+        ]);
+
+        $user = Auth::user();
+
+        // 2. Security Check: Pastikan yang akses beneran Guru
+        if ($user->role !== 'guru') {
+            return back()->with('error', 'Hanya Guru yang dapat mengupload portofolio.');
+        }
+
+        $guru = Guru::where('user_id', $user->id)->first();
+
+        if ($guru) {
+            // 3. Siapkan Folder
+            $folder = 'uploads/portofolio_guru';
+            $path = public_path($folder);
+
+            if (!File::exists($path)) {
+                File::makeDirectory($path, 0755, true);
+            }
+
+            // 4. Hapus file lama jika ada
+            if ($guru->portofolio && File::exists(public_path($guru->portofolio))) {
+                File::delete(public_path($guru->portofolio));
+            }
+
+            // 5. Upload file baru
+            $file = $request->file('portofolio');
+            // Nama file: portofolio_IDGURU_TIMESTAMP.pdf
+            $filename = 'portofolio_' . $guru->id . '_' . time() . '.pdf';
+            $file->move($path, $filename);
+
+            // 6. Simpan ke Database
+            $guru->portofolio = $folder . '/' . $filename;
+            $guru->save();
+
+            return back()->with('success', 'Portofolio berhasil diupload.');
+        }
+
+        return back()->with('error', 'Data guru tidak ditemukan.');
+    }
+
     public function updatePassword(Request $request)
     {
         $request->validate([

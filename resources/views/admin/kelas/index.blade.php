@@ -19,17 +19,17 @@
 @endif
 
 {{-- Tombol Tambah --}}
-<button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#createKelasModal">
+<button type="button" class="btn btn-success mb-3" data-toggle="modal" data-target="#createKelasModal">
     <i class="fas fa-plus"></i> Buat Kelas Baru
 </button>  
 
 <div class="row">
     @foreach($kelas as $k)
     <div class="col-md-4 mb-4">
-        <div class="card shadow h-100 border-left-primary">
+        <div class="card shadow h-100 border-left-success">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h4 class="font-weight-bold text-primary mb-0">{{ $k->nama_kelas }}</h4>
+                    <h4 class="font-weight-bold text-success mb-0">{{ $k->nama_kelas }}</h4>
                     
                     {{-- Dropdown Menu --}}
                     <div class="dropdown no-arrow">
@@ -69,7 +69,7 @@
                 </p>
                 <span class="badge badge-secondary">Tingkat {{ $k->tingkat }}</span>
 
-                <a href="{{ route('kelas.show', $k->id) }}" class="btn btn-sm btn-outline-primary w-100 mt-3">Detail & Anggota</a>
+                <a href="{{ route('kelas.show', $k->id) }}" class="btn btn-sm btn-outline-success w-100 mt-3">Detail & Anggota</a>
             </div>
         </div>
     </div>
@@ -91,7 +91,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label>Nama Kelas</label>
-                        <input type="text" name="nama_kelas" class="form-control" placeholder="X RPL 1" required>
+                        <input type="text" name="nama_kelas" class="form-control" placeholder="1A" required>
                     </div>
                     <div class="form-group">
                         <label>Wali Kelas</label>
@@ -113,7 +113,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="submit" class="btn btn-success">Simpan</button>
                 </div>
             </form>
         </div>
@@ -158,7 +158,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="submit" class="btn btn-success">Update</button>
                 </div>
             </form>
         </div>

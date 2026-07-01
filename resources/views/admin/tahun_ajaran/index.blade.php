@@ -20,6 +20,13 @@
         gap: 20px;
         align-items: start;
     }
+    .table-container {
+        background-color: #ffffff;      /* Latar Putih */
+        border-radius: 1rem;            /* Sudut membulat */
+        padding: 1.5rem;                /* Jarak dalam */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Bayangan halus */
+        border: 1px solid rgba(0,0,0,0.05); /* Border tipis */
+    }   
 
     /* Style untuk Table Wrapper agar bisa discroll di HP */
     .table-responsive-wrapper {
@@ -91,28 +98,33 @@
 
     {{-- Kolom Kanan: Tabel Data --}}
     <div class="table-container">
+        {{-- Header Tabel (Opsional, agar seimbang dengan form di kiri) --}}
+        <div class="table-header">
+            <h3>Daftar Tahun Ajaran</h3>
+        </div>
+
         {{-- Bungkus table dengan div responsive --}}
         <div class="table-responsive-wrapper">
             <table style="width: 100%; min-width: 500px;"> {{-- min-width memastikan tabel tidak gepeng --}}
                 <thead>
                     <tr>
-                        <th>Tahun</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
+                        <th style="text-align: left; padding: 10px;">Tahun</th>
+                        <th style="text-align: left; padding: 10px;">Status</th>
+                        <th style="text-align: left; padding: 10px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($tahun_ajaran as $ta)
-                    <tr>
-                        <td style="font-weight: bold;">{{ $ta->tahun }}</td>
-                        <td>
+                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                        <td style="font-weight: bold; padding: 12px 10px;">{{ $ta->tahun }}</td>
+                        <td style="padding: 12px 10px;">
                             @if($ta->is_active)
                                 <span class="badge badge-success">AKTIF</span>
                             @else
                                 <span class="badge badge-secondary">NON-AKTIF</span>
                             @endif
                         </td>
-                        <td>
+                        <td style="padding: 12px 10px;">
                             @if(!$ta->is_active)
                             <form action="{{ route('tahun-ajaran.activate', $ta->id) }}" method="POST" style="display:inline;">
                                 @csrf
@@ -123,6 +135,8 @@
                                 @csrf @method('DELETE')
                                 <button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
                             </form>
+                            @else
+                                <span class="text-muted" style="font-size: 0.8rem;">(Sedang Aktif)</span>
                             @endif
                         </td>
                     </tr>

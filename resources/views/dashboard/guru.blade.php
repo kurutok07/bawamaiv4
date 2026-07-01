@@ -288,60 +288,131 @@
                     <h5 class="modal-title"><i class="fas fa-cog me-2"></i> Pengaturan Akun</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <ul class="nav nav-tabs nav-justified mb-3" id="settingTab" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active text-success" id="foto-tab" data-bs-toggle="tab" href="#foto" role="tab">Foto Profil</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-secondary" id="pass-tab" data-bs-toggle="tab" href="#pass" role="tab">Ganti Password</a>
-                        </li>
-                    </ul>
-                    <div class="tab-content">
-                        {{-- TAB FOTO --}}
-                        <div class="tab-pane fade show active" id="foto" role="tabpanel">
-                            <form action="{{ route('profile.updateFoto') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                <div class="text-center mb-3">
-                                    @if(Auth::user()->foto_profil)
-                                        <img src="{{ asset(Auth::user()->foto_profil) }}" id="previewImg" class="rounded-circle mb-2 border shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
-                                    @else
-                                        {{-- Placeholder --}}
-                                        <div id="previewPlaceholder" class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto border mb-2" style="width: 100px; height: 100px;">
-                                            <i class="fas fa-user fa-3x text-secondary"></i>
-                                        </div>
-                                        {{-- Image hidden untuk preview JS --}}
-                                        <img src="#" id="previewImg" class="rounded-circle mb-2 border d-none" style="width: 100px; height: 100px; object-fit: cover;">
-                                    @endif
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold">Upload Foto Baru (Max 2MB)</label>
-                                    <input type="file" name="foto" class="form-control" accept="image/*" onchange="previewFile(this)">
-                                </div>
-                                <button type="submit" class="btn btn-success w-100 rounded-pill">Simpan Foto</button>
-                            </form>
-                        </div>
-                        {{-- TAB PASSWORD --}}
-                        <div class="tab-pane fade" id="pass" role="tabpanel">
-                            <form action="{{ route('profile.updatePassword') }}" method="POST">
-                                @csrf
-                                <div class="mb-2">
-                                    <label class="small fw-bold">Password Lama</label>
-                                    <input type="password" name="current_password" class="form-control" required>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="small fw-bold">Password Baru</label>
-                                    <input type="password" name="password" class="form-control" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="small fw-bold">Konfirmasi Password Baru</label>
-                                    <input type="password" name="password_confirmation" class="form-control" required>
-                                </div>
-                                <button type="submit" class="btn btn-warning w-100 rounded-pill text-white">Ganti Password</button>
-                            </form>
+            <div class="modal-body">
+    <ul class="nav nav-tabs nav-justified mb-4" id="settingTab" role="tablist">
+        {{-- Tab Foto --}}
+        <li class="nav-item">
+            <button class="nav-link active fw-bold" id="foto-tab" data-bs-toggle="tab" data-bs-target="#foto" type="button" role="tab">
+                <i class="fas fa-camera me-1"></i> Foto
+            </button>
+        </li>
+        
+        {{-- Tab Portofolio (Hanya Muncul Jika Guru) --}}
+        @if(Auth::user()->role == 'guru')
+        <li class="nav-item">
+            <button class="nav-link fw-bold" id="portofolio-tab" data-bs-toggle="tab" data-bs-target="#portofolio" type="button" role="tab">
+                <i class="fas fa-file-pdf me-1"></i> Portofolio
+            </button>
+        </li>
+        @endif
+
+        {{-- Tab Password --}}
+        <li class="nav-item">
+            <button class="nav-link fw-bold" id="pass-tab" data-bs-toggle="tab" data-bs-target="#pass" type="button" role="tab">
+                <i class="fas fa-key me-1"></i> Password
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        
+        <div class="tab-pane fade show active" id="foto" role="tabpanel">
+            <form action="{{ route('profile.updateFoto') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="text-center mb-4">
+                    {{-- Wadah Preview --}}
+                    <div class="position-relative d-inline-block">
+                        @if(Auth::user()->foto_profil)
+                            <img src="{{ asset(Auth::user()->foto_profil) }}" id="previewImg" 
+                                 class="rounded-circle border shadow-sm" 
+                                 style="width: 120px; height: 120px; object-fit: cover;">
+                        @else
+                            {{-- Placeholder jika belum ada foto --}}
+                            <div id="placeholderIcon" class="rounded-circle bg-light d-flex align-items-center justify-content-center border shadow-sm" 
+                                 style="width: 120px; height: 120px;">
+                                <i class="fas fa-user fa-3x text-secondary"></i>
+                            </div>
+                            {{-- Image hidden untuk preview nanti --}}
+                            <img src="#" id="previewImg" class="rounded-circle border shadow-sm d-none" 
+                                 style="width: 120px; height: 120px; object-fit: cover;">
+                        @endif
+                        
+                        {{-- Ikon Edit Kecil --}}
+                        <div class="position-absolute bottom-0 end-0 bg-white rounded-circle p-1 shadow border" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-pen text-primary small"></i>
                         </div>
                     </div>
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">Upload Foto Baru (Max 2MB)</label>
+                    <input type="file" name="foto" class="form-control" accept="image/*" onchange="previewFile(this)">
+                </div>
+                <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                    <i class="fas fa-save me-1"></i> Simpan Perubahan Foto
+                </button>
+            </form>
+        </div>
+
+        @if(Auth::user()->role == 'guru')
+        <div class="tab-pane fade" id="portofolio" role="tabpanel">
+            <form action="{{ route('profile.updatePortofolio') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="text-center mb-4 py-3 bg-light rounded border border-dashed">
+                    <i class="fas fa-file-pdf text-danger fa-3x mb-2"></i>
+                    <h6 class="fw-bold text-dark">Portofolio Guru</h6>
+                    <small class="text-muted">Format PDF, Maksimal 5MB</small>
+                </div>
+
+                {{-- Info File Saat Ini --}}
+                @php $guru = \App\Models\Guru::where('user_id', Auth::id())->first(); @endphp
+                @if($guru && $guru->portofolio)
+                    <div class="alert alert-success d-flex align-items-center justify-content-between p-2 mb-3">
+                        <small class="fw-bold"><i class="fas fa-check-circle me-1"></i> File Tersedia</small>
+                        <a href="{{ asset($guru->portofolio) }}" target="_blank" class="btn btn-sm btn-light text-success border fw-bold">
+                            <i class="fas fa-eye me-1"></i> Lihat
+                        </a>
+                    </div>
+                @endif
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Pilih File PDF</label>
+                    <input type="file" name="portofolio" class="form-control" accept="application/pdf" required>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 rounded-pill">
+                    <i class="fas fa-cloud-upload-alt me-1"></i> Upload Portofolio
+                </button>
+            </form>
+        </div>
+        @endif
+
+        <div class="tab-pane fade" id="pass" role="tabpanel">
+            <form action="{{ route('profile.updatePassword') }}" method="POST">
+                @csrf
+                <div class="mb-3">
+                    <label class="small fw-bold">Password Lama</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-lock"></i></span>
+                        <input type="password" name="current_password" class="form-control" required placeholder="******">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold">Password Baru</label>
+                    <input type="password" name="password" class="form-control" required placeholder="Minimal 6 karakter">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold">Konfirmasi Password Baru</label>
+                    <input type="password" name="password_confirmation" class="form-control" required placeholder="Ulangi password baru">
+                </div>
+                <button type="submit" class="btn btn-warning w-100 rounded-pill text-white fw-bold">
+                    <i class="fas fa-check me-1"></i> Ganti Password
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
             </div>
         </div>
     </div>
@@ -372,5 +443,26 @@
             }
         }
     </script>
+    <script>
+    function previewFile(input) {
+        var file = input.files[0];
+        if(file){
+            var reader = new FileReader();
+            reader.onload = function(){
+                var previewImg = document.getElementById('previewImg');
+                var placeholder = document.getElementById('placeholderIcon');
+
+                if(previewImg) {
+                    previewImg.src = reader.result;
+                    previewImg.classList.remove('d-none'); // Munculkan gambar
+                }
+                if(placeholder) {
+                    placeholder.classList.add('d-none');   // Sembunyikan ikon orang
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+</script>
 </body>
 </html>

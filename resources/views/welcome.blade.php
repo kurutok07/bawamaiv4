@@ -195,19 +195,96 @@
         </div>
     </header>
             
-    <section class="hero-section">
-        <div class="container hero-content">
-            <div class="hero-text">
-                <span>SELAMAT DATANG DI</span>
-                <h1>LMS SD BAWAMAI PONTIANAK</h1>
+    {{-- BAGIAN HERO / CAROUSEL --}}
+{{-- BAGIAN HERO / CAROUSEL --}}        
+        <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-touch="true">
+            
+            {{-- Indikator Slide --}}
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" 
+                        class="active bg-dark" aria-current="true" aria-label="Slide 1"></button>
+                
+                @if(isset($carousels) && $carousels->isNotEmpty())
+                    @foreach($carousels as $key => $slide)
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ $key + 1 }}" 
+                                class="bg-dark" aria-label="Slide {{ $key + 2 }}"></button>
+                    @endforeach
+                @endif
             </div>
-            <div class="hero-logo-wrapper">
-                <img src="{{ asset('assets/1.png') }}" alt="Logo Besar" class="hero-logo">
+
+            {{-- Konten Slide --}}
+            <div class="carousel-inner">
+                
+                {{-- SLIDE 1: SELAMAT DATANG (Fix Tengah) --}}
+                <div class="carousel-item active" data-bs-interval="5000" style="height: 500px;">
+                    {{-- PERBAIKAN: Gunakan w-100 + Flex Column + Align/Justify Center --}}
+                    <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center px-3">
+                        
+                        {{-- Logo --}}
+                        <div class="mb-4">
+                            <img src="{{ asset('assets/1.png') }}" alt="Logo Besar" 
+                                 class="img-fluid d-block mx-auto" style="max-height: 200px; width: auto;">
+                        </div>
+                        
+                        {{-- Teks --}}
+                        <div>
+                            <span class="d-block mb-2 text-uppercase fw-bold text-success ls-1" style="letter-spacing: 2px;">Selamat Datang Di</span>
+                            <h1 class="fw-bolder display-5 text-dark mb-0">LMS SD BAWAMAI PONTIANAK</h1>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- SLIDE SELANJUTNYA: DARI DATABASE --}}
+                @if(isset($carousels) && $carousels->isNotEmpty())
+                    @foreach($carousels as $key => $slide)
+                        <div class="carousel-item" data-bs-interval="3000" style="height: 500px; background-color: #f8f9fa;">
+                            
+                @if($slide->type == 'image')
+                    {{-- TIPE 1: GAMBAR DENGAN EFEK BLUR BACKGROUND --}}
+                    <div style="width: 100%; height: 100%; position: relative; overflow: hidden; background: #000;">
+                        
+                        {{-- 1. Background Blur (Mengisi seluruh area) --}}
+                        <div style="
+                            position: absolute;
+                            top: 0; left: 0; right: 0; bottom: 0;
+                            background-image: url('{{ asset('storage/' . $slide->file_path) }}');
+                            background-size: cover;
+                            background-position: center;
+                            filter: blur(20px) brightness(0.7); /* Efek Blur & Gelap dikit */
+                            z-index: 1;
+                        "></div>
+
+                        {{-- 2. Foto Asli (Tinggi 100%, Lebar Auto, Posisi Tengah) --}}
+                        <img src="{{ asset('storage/' . $slide->file_path) }}" 
+                            alt="Slide {{ $key }}" 
+                            style="
+                                position: relative;
+                                z-index: 2;
+                                height: 100%; 
+                                width: auto; 
+                                max-width: 100%; 
+                                display: block; 
+                                margin: 0 auto; 
+                                object-fit: contain;
+                                box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Bayangan biar pop-up */
+                            ">
+                    </div>
+
+                            @else
+                                {{-- TIPE 2: HTML CUSTOM --}}
+                                {{-- Terapkan logic centering yang sama --}}
+                                <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center px-3">
+                                    {!! $slide->html_content !!}
+                                </div>
+                            @endif
+
+                        </div>
+                    @endforeach
+                @endif
+
             </div>
         </div>
-    </section>
-
-    <main class="container" id="fitur" style="padding-top: 20px;">
+        <main class="container" id="fitur" style="padding-top: 20px;">
         
         {{-- ALERT MESSAGES --}}
         @if(session('success'))
@@ -348,7 +425,7 @@
                 <div class="social-icons">
                     <a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a>
                     <a href="https://www.youtube.com/channel/UCSogJssy9q1QItvfHS19ptA/videos" target="_blank"><i class="fab fa-youtube"></i></a>
-                    <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.instagram.com/sdbawamai/" target="_blank"><i class="fab fa-instagram"></i></a>
                 </div>
             </div>
             <div class="footer-copyright">

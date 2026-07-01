@@ -6,8 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
-use App\Models\RaportFile; 
-use App\Models\RaportCategory; 
+use App\Models\RaportFile;
+use App\Models\RaportCategory;
+use App\Models\Kelas;
 
 class SiswaRaportController extends Controller
 {
@@ -16,61 +17,91 @@ class SiswaRaportController extends Controller
         $user = Auth::user();
         $siswa = Siswa::where('user_id', $user->id)->first();
 
-        if (!$siswa) {
-            return redirect()->back()->with('error', 'Data siswa tidak ditemukan.');
-        }
+        if (!$siswa) return redirect()->back()->with('error', 'Data siswa tidak ditemukan.');
 
-        // 1. Ambil Riwayat Kelas
-        // Menggunakan withPivot('tahun_ajaran_id') dari model Siswa
+        // Ambil Riwayat Kelas
         $riwayatKelas = $siswa->riwayatKelas()
-                        ->with(['waliKelas', 'tahunAjaran']) // Load relasi biar namanya muncul
-                        ->get()
-                        ->sortByDesc(function($kelas) {
-                            return $kelas->pivot->tahun_ajaran_id; 
-                        });
-
-        // 2. Ambil List Tahun Ajaran (Kamus ID => Nama)
-        $listTahun = TahunAjaran::pluck('tahun', 'id');
-
-        // 3. LOGIC BARU: Mapping File Raport
-        $files = RaportFile::with('category')
-                    ->where('student_id', $siswa->id)
-                    ->get();
-
-        $fileMap = [];
+                                ->with(['waliKelas', 'tahunAjaran'])
+                                ->get()
+                                ->sortByDesc(function($kelas) {
+                                    return $kelas->pivot->tahun_ajaran_id;
+                                });
         
-        foreach ($files as $file) {
-            // Logic Deteksi Ganjil/Genap
-            $kategoriNama = strtolower($file->category->nama ?? '');
-            $kategoriId   = $file->raport_category_id;
-            
-            $jenis = 'unknown';
+        // HAPUS BAGIAN REDIRECT OTOMATIS INI:
+        // if ($kelasTerbaru) { return redirect(...) } 
 
-            // Cek by Nama
-            if (str_contains($kategoriNama, 'ganjil')) {
-                $jenis = 'ganjil';
-            } elseif (str_contains($kategoriNama, 'genap')) {
-                $jenis = 'genap';
-            }
+        return view('siswa.raport.index', compact('riwayatKelas'));
+    }
 
-            // Cek by ID (Fallback)
-            if ($jenis === 'unknown') {
-                if ($kategoriId == 1) $jenis = 'ganjil';
-                elseif ($kategoriId == 2) $jenis = 'genap';
-            }
+    public function show(Request $request, $kelas_id, $semester = null)
+    {
+        $user = Auth::user();
+        $siswa = Siswa::where('user_id', $user->id)->first();
+        
+        // 1. Validasi Akses Kelas (Apakah siswa benar-benar pernah di kelas ini?)
+        $isMember = \Illuminate\Support\Facades\DB::table('kelas_siswa')
+                        ->where('siswa_id', $siswa->id)
+                        ->where('kelas_id', $kelas_id)
+                        ->exists();
 
-            if ($jenis === 'unknown') continue;
-
-            // Generate URL
-            // Pastikan path-nya benar sesuai penyimpanan controller upload
-            $url = asset('storage/' . $file->file_path);
-            
-            // --- PERBAIKAN UTAMA DISINI ---
-            // Simpan berdasarkan [KELAS] DAN [TAHUN]
-            // Agar raport tahun lalu tetap aman pada tempatnya
-            $fileMap[$file->kelas_id][$file->tahun_ajaran_id][$jenis] = $url;
+        if (!$isMember) {
+            abort(403, 'Anda tidak memiliki akses ke kelas ini.');
         }
 
-        return view('siswa.raport.index', compact('riwayatKelas', 'siswa', 'listTahun', 'fileMap'));
+        $kelas = Kelas::with(['tahunAjaran', 'waliKelas'])->findOrFail($kelas_id);
+
+        // 2. LOGIC SIDEBAR (Kategori Induk)
+        $rootCategories = RaportCategory::whereNull('parent_id')
+                            ->with('children')
+                            ->orderBy('type', 'desc') // Folder dulu baru FileType
+                            ->orderBy('id', 'asc')
+                            ->get();
+
+        // 3. LOGIC FOLDER AKTIF (Sama seperti Guru Controller)
+        // Ambil Folder ID dari URL (?folder_id=...), jika tidak ada ambil Folder Pertama
+        $firstCategory = $rootCategories->first();
+        $defaultId = $firstCategory ? $firstCategory->id : null;
+        $selectedFolderId = $request->query('folder_id', $defaultId);
+        
+        $selectedFolder = RaportCategory::with('children')->find($selectedFolderId);
+
+        // Jika kategori dihapus admin tapi user masih akses link lama
+        if (!$selectedFolder) {
+            return redirect()->route('siswa.raport.show', ['kelas_id' => $kelas_id]);
+        }
+
+        // 4. Kumpulkan ID Kategori yang Relevan (Induk + Anak-anaknya)
+        // Agar jika user klik Folder "UTS", file di dalam sub-kategori "UTS Matematika" juga muncul
+        $relevantCategoryIds = [$selectedFolderId];
+        
+        if ($selectedFolder->type == 'folder') {
+             $relevantCategoryIds = array_merge($relevantCategoryIds, $selectedFolder->children->pluck('id')->toArray());
+        }
+
+        // 5. AMBIL FILE RAPORT
+        // Filter berdasarkan: Siswa Login, Kelas Dipilih, dan Kategori Relevan
+        $files = RaportFile::where('student_id', $user->id)
+                           ->where('kelas_id', $kelas_id)
+                           ->whereIn('raport_category_id', $relevantCategoryIds)
+                           ->with('category') // Eager load nama kategori
+                           ->orderBy('created_at', 'desc')
+                           ->get();
+
+        // 6. Data Tambahan untuk Navigasi (Riwayat Kelas di Sidebar/Dropdown)
+        $riwayatKelas = $siswa->riwayatKelas()
+                              ->with(['tahunAjaran'])
+                              ->get()
+                              ->sortByDesc(function($k) {
+                                  return $k->pivot->tahun_ajaran_id;
+                              });
+
+        return view('siswa.raport.show', compact(
+            'siswa',
+            'kelas',
+            'riwayatKelas',
+            'rootCategories',
+            'selectedFolder',
+            'files'
+        ));
     }
 }

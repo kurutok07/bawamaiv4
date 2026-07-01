@@ -24,6 +24,15 @@ class DashboardController extends Controller
         elseif ($role == 'kepala_sekolah') {
             return view('dashboard.kepala_sekolah');
         }
+        elseif ($role == 'uks') {
+        return view('dashboard.uks'); // Lempar ke dashboard admin yang sama
+        }
+        elseif ($role == 'perpus') {
+        return view('dashboard.perpus'); // Lempar ke dashboard admin yang sama
+        }
+        elseif ($role == 'admin_qurana') {
+        return view('dashboard.perpus'); // Lempar ke dashboard admin yang sama
+        }
         else {
             // Fallback jika role tidak dikenali
             return abort(403, 'Role tidak dikenali');

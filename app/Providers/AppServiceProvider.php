@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Auth\Events\Login;
 use App\Listeners\LogSuccessfulLogin;
+use Illuminate\Pagination\Paginator; // <--- JANGAN LUPA INI! Kalau lupa, pasti crash.
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,7 +25,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // --- TAMBAHKAN INI ---
         // Setiap kali ada event Login, jalankan listener LogSuccessfulLogin
-        Event::listen(
+	Paginator::useBootstrapFive();        
+	Event::listen(
             Login::class,
             LogSuccessfulLogin::class,
         );

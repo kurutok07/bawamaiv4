@@ -115,22 +115,26 @@ class LmsController extends Controller
             $guru = $this->getLoggedGuru();
             if ($guru) {
                 $activeTa = $this->getActiveTahunAjaran();
-                // Ambil ID kelas yang diajar guru ini
-                $kelasAjarIds = $guru->kelasAjar()
-                                     ->wherePivot('tahun_ajaran_id', $activeTa->id)
-                                     ->pluck('kelas.id');
 
-                $query->where(function($q) use ($kelasAjarIds, $guru) {
-                    // BARIS INI DIHAPUS AGAR FOLDER UMUM HILANG DARI GURU:
-                    // $q->whereNull('kelas_id') 
-                    
-                    // GANTI JADI HANYA INI:
-                    $q->whereIn('kelas_id', $kelasAjarIds) // 1. Hanya Materi Kelas Ajarnya
-                      ->orWhere('guru_id', $guru->id);      // 2. Atau Materi Buatannya Sendiri
-                });
+                $query->where('guru_id', $guru->id)
+                      ->where(function($q) use ($activeTa) {
+                          // 1. Tampilkan file yang terikat dengan kelas pada Tahun Ajaran Aktif
+                          $q->whereHas('kelas', function($queryKelas) use ($activeTa) {
+                              $queryKelas->where('tahun_ajaran_id', $activeTa->id);
+                          })
+                          // 2. Tetap tampilkan Folder Umum / Root (yang kelas_id-nya null)
+                          // agar hirarki folder guru tidak rusak, tapi isinya nanti akan kosong.
+                          ->orWhereNull('kelas_id'); 
+                      });
             }
-        }
-        // ---------------------------------
+        } elseif (in_array(Auth::user()->role, ['perpus', 'admin_qurana'])) {
+    // 1. HARAM melihat LMS Kelas
+    $query->whereNull('kelas_id');
+    
+    // 2. Hanya melihat folder dan file miliknya sendiri
+    $query->where('user_id', Auth::id());
+}
+                // ---------------------------------
 
         $items = $query->orderBy('type', 'asc') // Folder di atas
                        ->orderBy('order', 'asc')
@@ -168,15 +172,16 @@ class LmsController extends Controller
     }
 
     // Proses Simpan Data
+// Proses Simpan Data
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required',
             'type'  => 'required',
             'cover_image' => 'image|mimes:jpeg,png,jpg|max:2048|nullable',
-            'file_upload' => 'required_if:type,file|mimes:pdf|max:10000', 
+            'file_upload' => 'required_if:type,file|mimes:pdf|max:10000',
             'url_link'    => 'required_if:type,video,link',
-            'kelas_id'    => 'nullable|exists:kelas,id', // Validasi Kelas
+            'kelas_id'    => 'nullable|exists:kelas,id',
         ]);
 
         // Cek ID Guru Pengupload
@@ -189,11 +194,12 @@ class LmsController extends Controller
         $data = [
             'parent_id' => $request->parent_id,
             'title'     => $request->title,
-            'slug'      => Str::slug($request->title) . '-' . Str::random(5), 
+            'slug'      => Str::slug($request->title) . '-' . Str::random(5),
             'type'      => $request->type,
             'is_active' => true,
-            'kelas_id'  => $request->kelas_id, // Simpan Target Kelas
-            'guru_id'   => $guruId,            // Simpan Siapa yang upload
+            'kelas_id'  => $request->kelas_id,
+            'guru_id'   => $guruId,
+            'user_id'   => Auth::id(),
         ];
 
         // 1. Upload Cover Image
@@ -212,11 +218,21 @@ class LmsController extends Controller
                 $file->move(public_path('assets/pdf'), $filename);
                 $data['content'] = 'assets/pdf/' . $filename;
             }
-        } 
-        elseif ($request->type == 'video') {
+        }
+	elseif ($request->type == 'video') {
             $url = $request->url_link;
-            $url = preg_replace("/\s*[a-zA-Z\/\/:\.]*youtu(be.com\/watch\?v=|.be\/)([a-zA-Z0-9\-_]+)([a-zA-Z0-9\/\*\-\_\?\&\;\%\=\.]*)/i", "https://www.youtube.com/embed/$2", $url);
-            $data['content'] = $url;
+            
+            // --- FIX REGEX YOUTUBE (SUPPORT SHORTS) ---
+            // Menambahkan '|shorts' di dalam pola agar link shorts terbaca
+            $pattern = '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i';
+            
+            if (preg_match($pattern, $url, $matches)) {
+                $videoId = $matches[1];
+                // Paksa jadi link embed biasa agar bisa diputar di iframe
+                $data['content'] = 'https://www.youtube.com/embed/' . $videoId;
+            } else {
+                $data['content'] = $url; 
+            }
         }
         elseif ($request->type == 'link') {
             $data['content'] = $request->url_link;
@@ -251,6 +267,7 @@ class LmsController extends Controller
     }
 
     // Update Data
+// Update Data
     public function update(Request $request, $id)
     {
         $item = LmsItem::findOrFail($id);
@@ -262,9 +279,8 @@ class LmsController extends Controller
             'kelas_id'    => 'nullable|exists:kelas,id',
         ]);
 
-        // Update Data Dasar
         $item->title    = $request->title;
-        $item->kelas_id = $request->kelas_id; // Update Target Kelas
+        $item->kelas_id = $request->kelas_id;
 
         // Handle Cover Image
         if ($request->hasFile('cover_image')) {
@@ -288,12 +304,20 @@ class LmsController extends Controller
                 $file->move(public_path('assets/pdf'), $filename);
                 $item->content = 'assets/pdf/' . $filename;
             }
-        } 
-        elseif ($item->type == 'video') {
+        }
+	elseif ($item->type == 'video') {
             if ($request->filled('url_link')) {
                 $url = $request->url_link;
-                $url = preg_replace("/\s*[a-zA-Z\/\/:\.]*youtu(be.com\/watch\?v=|.be\/)([a-zA-Z0-9\-_]+)([a-zA-Z0-9\/\*\-\_\?\&\;\%\=\.]*)/i", "https://www.youtube.com/embed/$2", $url);
-                $item->content = $url;
+                
+                // --- FIX REGEX YOUTUBE (SUPPORT SHORTS) ---
+                $pattern = '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i';
+
+                if (preg_match($pattern, $url, $matches)) {
+                    $videoId = $matches[1];
+                    $item->content = 'https://www.youtube.com/embed/' . $videoId;
+                } else {
+                    $item->content = $url;
+                }
             }
         }
         elseif ($item->type == 'link') {
@@ -360,8 +384,7 @@ public function analytics()
                       ->orWhereIn('kelas_id', $kelasAjarIds); // Materi kelas ajar
                 });
             }
-        }
-
+        } 
         // --- 3. EKSEKUSI DATA (MENGGUNAKAN QUERY YANG SUDAH DIFILTER) ---
 
         // A. Total Views
@@ -515,14 +538,9 @@ public function getStudentHistory($id)
         return response()->json(['student_name' => $student->name, 'history' => $history]);
     }
     // --- AJAX: DETAIL SISWA UNTUK MODAL ---
-    // --- AJAX: DETAIL SISWA UNTUK MODAL (PERBAIKAN ERROR 500) ---
-    public function getStudentDetail($id)
+public function getStudentDetail($id)
     {
-        // 1. Ambil Data Siswa (Berdasarkan User ID)
-        // ID yang dikirim dari frontend (24) adalah User ID, bukan Siswa ID.
         $siswa = \App\Models\Siswa::with('kelas')->where('user_id', $id)->firstOrFail();
-
-        // 2. Ambil Kelas Aktif
         $activeTa = \App\Models\TahunAjaran::where('is_active', 1)->first();
         $kelasAktif = null;
         
@@ -532,18 +550,15 @@ public function getStudentHistory($id)
                                 ->first();
         }
 
-        // 3. Ambil Riwayat Akses Materi (Menggunakan Model LmsAccessLog)
-        $logs = \App\Models\LmsAccessLog::with(['lmsItem.parent']) // Load relasi item & folder parent
-                    ->where('user_id', $id) // Filter berdasarkan User ID (24)
+        $logs = \App\Models\LmsAccessLog::with(['lmsItem.parent'])
+                    ->where('user_id', $id)
                     ->orderBy('created_at', 'desc')
                     ->limit(50)
                     ->get()
                     ->map(function($log) {
-                        // Cek jika item materi masih ada atau sudah dihapus
                         $itemTitle = $log->lmsItem ? $log->lmsItem->title : '<span class="text-danger font-italic">Item dihapus</span>';
                         $itemType  = $log->lmsItem ? $log->lmsItem->type : '-';
                         
-                        // Cek Folder Parent
                         $folder = 'Umum/Root';
                         if ($log->lmsItem && $log->lmsItem->parent) {
                             $folder = $log->lmsItem->parent->title;
@@ -553,12 +568,12 @@ public function getStudentHistory($id)
                             'item_title' => $itemTitle,
                             'item_type'  => $itemType,
                             'folder'     => $folder,
-                            'time'       => $log->created_at->format('d M Y H:i'),
+                            // FIX TIMEZONE HERE
+                            'time'       => $log->created_at->setTimezone('Asia/Pontianak')->format('d M Y H:i'),
                             'device'     => (str_contains($log->user_agent, 'Mobile') || str_contains($log->user_agent, 'Android')) ? 'HP/Tablet' : 'PC/Laptop'
                         ];
                     });
 
-        // 4. Statistik Ringkas
         $totalAkses = \App\Models\LmsAccessLog::where('user_id', $id)->count();
 
         return response()->json([
@@ -571,114 +586,149 @@ public function getStudentHistory($id)
             'logs' => $logs
         ]);
     }
+    
+// =========================================================================
+    // BAGIAN 4: ANALYTICS GURU (FITUR BARU - UPDATED)
+    // =========================================================================
+    
+    public function teacherAnalytics()
+    {
+        // 1. Cek Permission (Admin & Kepsek Only)
+        if (!in_array(Auth::user()->role, ['admin', 'kepala_sekolah'])) {
+            abort(403, 'Akses Ditolak');
+        }
 
-    // --- AJAX: DETAIL GURU UNTUK MODAL ---
+        // 2. Ambil Data Semua Guru + Hitung Total Upload Materi
+        $gurus = \App\Models\Guru::with('user')
+            ->withCount(['lmsItems as total_materi' => function($q) {
+                // Hanya hitung file/video/link, bukan folder kosong
+                $q->where('type', '!=', 'folder'); 
+            }])
+            ->get()
+            ->map(function($guru) {
+                // Hitung Total Login (Manual Query ke tabel logs)
+                $guru->total_login = DB::table('login_logs')
+                                       ->where('user_id', $guru->user_id)
+                                       ->count();
+                return $guru;
+            })
+            ->sortByDesc('total_materi'); // Urutkan dari yang paling rajin
+
+        // 3. Data untuk Grafik (Top 5 Pengupload)
+        // Ambil 5 teratas, lalu pluck nama lengkapnya
+        $top5 = $gurus->take(5);
+        $topGuruNames = $top5->map(function($g) {
+            // Format nama pendek untuk grafik
+            return Str::limit($g->nama_lengkap, 15); 
+        })->values(); // values() untuk reset index array jadi [0,1,2..] agar chartjs tidak bingung
+        
+        $topGuruCounts = $top5->pluck('total_materi')->values();
+
+        // 4. Recent Activity Feed (Gabungan Login & Upload)
+        
+        // A. Ambil 10 Login Terakhir (Join ke tabel Guru untuk dapat Nama & Gelar)
+        $recentLogins = DB::table('login_logs')
+            ->join('users', 'login_logs.user_id', '=', 'users.id')
+            ->join('gurus', 'users.id', '=', 'gurus.user_id') 
+            ->select(
+                'gurus.nama_lengkap', 
+                'gurus.gelar_depan', 
+                'gurus.gelar_belakang',
+                'login_logs.login_at as created_at', 
+                DB::raw("'login' as type"), 
+                DB::raw("NULL as item_title")
+            )
+            ->orderBy('login_logs.id', 'desc')
+            ->limit(10)
+            ->get();
+
+        // B. Ambil 10 Upload Terakhir (Eloquent Relationship)
+        $recentUploads = \App\Models\LmsItem::with('guru')
+            ->whereNotNull('guru_id')
+            ->where('type', '!=', 'folder') // Bukan folder
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($item) {
+                // Mapping agar strukturnya sama dengan $recentLogins
+                return (object) [
+                    'nama_lengkap'   => $item->guru->nama_lengkap ?? 'Guru Terhapus',
+                    'gelar_depan'    => $item->guru->gelar_depan ?? '',
+                    'gelar_belakang' => $item->guru->gelar_belakang ?? '',
+                    'created_at'     => $item->created_at,
+                    'type'           => 'upload',
+                    'item_title'     => $item->title
+                ];
+            });
+
+        // C. Gabungkan Login & Upload, lalu Urutkan Waktu Terbaru
+        $recentActivities = $recentLogins->merge($recentUploads)
+                                         ->sortByDesc('created_at')
+                                         ->take(10); // Ambil 10 aktivitas campuran terbaru
+
+        return view('admin.lms.teacher_analytics', compact('gurus', 'topGuruNames', 'topGuruCounts', 'recentActivities'));
+    }
+
+    // --- AJAX DETAIL GURU (UNTUK MODAL) ---
     public function getTeacherDetail($id)
     {
-        // 1. Ambil Data Guru & Usernya
+        // 1. Ambil Data Guru
         $guru = \App\Models\Guru::with('user')->findOrFail($id);
 
-        // 2. Ambil Riwayat Upload (LMS Items)
+        // 2. Ambil History Upload
         $uploads = \App\Models\LmsItem::where('guru_id', $id)
+                    ->where('type', '!=', 'folder')
                     ->orderBy('created_at', 'desc')
                     ->get()
                     ->map(function($item) {
                         return [
-                            'title' => $item->title,
-                            'type' => $item->type,
-                            'created_at' => $item->created_at->format('d M Y H:i'),
-                            'audiens' => $item->kelas ? $item->kelas->nama_kelas : 'Umum'
+                            'title'      => $item->title,
+                            'type'       => $item->type, // file, video, link
+                            // Format Waktu Indonesia (WIB/WITA/WIT sesuai server, disini kita set Pontianak)
+                            'created_at' => $item->created_at->setTimezone('Asia/Pontianak')->format('d M Y H:i'),
+                            'audiens'    => $item->kelas ? $item->kelas->nama_kelas : 'Umum'
                         ];
                     });
 
-        // 3. Ambil Riwayat Login (Maksimal 50 terakhir agar tidak berat)
+        // 3. Ambil History Login (Max 50 terakhir)
         $logins = DB::table('login_logs')
                     ->where('user_id', $guru->user_id)
                     ->orderBy('login_at', 'desc')
                     ->limit(50)
                     ->get()
                     ->map(function($log) {
+                        // Parsing Waktu Login
+                        $loginTime = \Carbon\Carbon::parse($log->login_at)->setTimezone('Asia/Pontianak');
+                        
+                        // Deteksi Device Sederhana
+                        $agent = strtolower($log->user_agent);
+                        $device = 'PC/Laptop';
+                        if (str_contains($agent, 'mobile') || str_contains($agent, 'android') || str_contains($agent, 'iphone')) {
+                            $device = 'HP/Tablet';
+                        }
+
                         return [
-                            'ip' => $log->ip_address,
-                            'device' => (str_contains($log->user_agent, 'Mobile') || str_contains($log->user_agent, 'Android')) ? 'HP/Tablet' : 'PC/Laptop',
-                            'time' => \Carbon\Carbon::parse($log->login_at)->format('d M Y H:i'),
-                            'ago' => \Carbon\Carbon::parse($log->login_at)->diffForHumans()
+                            'ip'     => $log->ip_address,
+                            'device' => $device,
+                            'time'   => $loginTime->format('d M Y H:i'),
+                            'ago'    => $loginTime->diffForHumans()
                         ];
                     });
         
-        // 4. Hitung Total
+        // 4. Statistik Ringkas
         $stats = [
             'total_upload' => $uploads->count(),
-            'total_login' => DB::table('login_logs')->where('user_id', $guru->user_id)->count()
+            'total_login'  => DB::table('login_logs')->where('user_id', $guru->user_id)->count()
         ];
 
+        // 5. Return JSON ke View
         return response()->json([
-            'guru' => $guru,
-            'email' => $guru->user->email, // Ambil email dari tabel users
+            'guru'    => $guru,        // Objek guru lengkap (termasuk niy, gelar, hp, dll)
+            'email'   => $guru->user->email ?? '-', // Email login
             'uploads' => $uploads,
-            'logins' => $logins,
-            'stats' => $stats
+            'logins'  => $logins,
+            'stats'   => $stats
         ]);
-    }
-
-    // =========================================================================
-    // BAGIAN 4: ANALYTICS GURU (FITUR BARU)
-    // =========================================================================
-    public function teacherAnalytics()
-    {
-        // PERBAIKAN: Izinkan Admin ATAU Kepala Sekolah
-        if (!in_array(Auth::user()->role, ['admin', 'kepala_sekolah'])) {
-            abort(403);
-        }
-
-        // 1. Ambil Data Guru Beserta Statistiknya
-        $gurus = \App\Models\Guru::with('user')
-            ->withCount(['lmsItems as total_materi' => function($q) {
-                $q->whereNotNull('content'); // Hanya hitung file/video, bukan folder kosong
-            }])
-            ->get()
-            ->map(function($guru) {
-                // Hitung Login User Terkait (Manual Query agar ringan)
-                $guru->total_login = DB::table('login_logs')
-                                       ->where('user_id', $guru->user_id)
-                                       ->count();
-                return $guru;
-            })
-            ->sortByDesc('total_materi'); // Urutkan dari yang paling rajin upload
-
-        // 2. Data Grafik (Top 5 Pengupload)
-        $topGuruNames = $gurus->take(5)->pluck('nama_lengkap');
-        $topGuruCounts = $gurus->take(5)->pluck('total_materi');
-
-        // 3. Recent Activity (Gabungan Login & Upload)
-        // Kita ambil 10 Log Login Terakhir & 10 Upload Terakhir, lalu di-merge
-        $recentLogins = DB::table('login_logs')
-            ->join('users', 'login_logs.user_id', '=', 'users.id')
-            ->join('gurus', 'users.id', '=', 'gurus.user_id') // Join ke guru buat dapet nama
-            ->select('gurus.nama_lengkap', 'login_logs.login_at as created_at', DB::raw("'login' as type"), DB::raw("NULL as item_title"))
-            ->orderBy('login_logs.id', 'desc')
-            ->limit(10)
-            ->get();
-
-        $recentUploads = \App\Models\LmsItem::with('guru')
-            ->whereNotNull('guru_id')
-            ->whereNotNull('content') // Bukan folder
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get()
-            ->map(function($item) {
-                return (object) [
-                    'nama_lengkap' => $item->guru->nama_lengkap ?? 'Guru Terhapus',
-                    'created_at' => $item->created_at,
-                    'type' => 'upload',
-                    'item_title' => $item->title
-                ];
-            });
-
-        // Gabungkan dan urutkan ulang berdasarkan waktu
-        $recentActivities = $recentLogins->merge($recentUploads)->sortByDesc('created_at')->take(10);
-
-        return view('admin.lms.teacher_analytics', compact('gurus', 'topGuruNames', 'topGuruCounts', 'recentActivities'));
-    }
+    }    
     
 }
